@@ -2,6 +2,7 @@ import asyncio
 from whois21 import WHOIS
 
 from .result import Ok, Err, Result
+from .logger import debug
 
 
 async def whois_query(domain: str) -> Result[dict, dict]:
@@ -59,13 +60,13 @@ async def query_expired_date(domain: str) -> Result[str, str]:
         Result[str, str]: 过期时间，可能的形式为 2033-12-23T07:59:05Z 或 2033-12-23T07:59:05.000Z
     """
     query_ret = await whois_query(domain)
-    
+
     match query_ret:
         case Ok(value):
             result = value
         case Err(_error):
             return Err("Not Found")
-    
+
     if result["code"] == 200:
         if result["expired_date"] is not None:
             return Ok(result["expired_date"])
@@ -73,10 +74,14 @@ async def query_expired_date(domain: str) -> Result[str, str]:
         for line in result["raw"].split("\n"):
             if "Expiration Time" in line:
                 return Ok(line.removeprefix("Expiration Time: ").strip())
+            if "Registry Expiry Date" in line:
+                return Ok(line.removeprefix("Registry Expiry Date: ").strip())
+        debug(f"{domain} 未找到过期时间", result)
         return Err("Not Found")
 
 
 if __name__ == "__main__":
+
     async def main():
         result = await query_expired_date("luogu.com.cn")
         match result:

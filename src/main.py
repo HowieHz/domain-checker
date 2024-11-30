@@ -1,4 +1,3 @@
-import logging
 from typing import Optional
 import tldextract
 import asyncio
@@ -63,7 +62,6 @@ async def main(
     output_file: Optional[str] = None,
     error_file: Optional[str] = None,
 ):
-    logging.basicConfig(level=logging.ERROR)
     # 读取 input.txt 文件中的域名，一行一个域名，节约内存的读法
     async with aiofiles.open(input_file, "r") as f:
         async for line in f:
