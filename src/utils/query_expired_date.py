@@ -76,8 +76,10 @@ async def query_expired_date(domain: str) -> Result[str, str]:
                 return Ok(line.removeprefix("Expiration Time: ").strip())
             if "Registry Expiry Date" in line:
                 return Ok(line.removeprefix("Registry Expiry Date: ").strip())
+        if result["register"] == False:
+            return Err("Not Register")  # 未注册
         debug(f"{domain} 未找到过期时间", result)
-        return Err("Not Found")
+        return Err("Not Found Date")
 
 
 if __name__ == "__main__":

@@ -27,12 +27,19 @@ async def process_domain(
     match query_expired_date_result:
         case Ok(value):
             expired_date = value
-        case Err(_error):
-            info(domain, "未找到过期日期")
-            # 未找到的写入 error.txt 文件
-            if error_file is not None:
-                async with aiofiles.open(error_file, "a") as f:
-                    await f.write(domain + "\n")
+        case Err(error):
+            if error == "Not Register":
+                info(domain, "未注册")
+                # 未注册算过期，写入 output.txt 文件
+                if output_file is not None:
+                    async with aiofiles.open(output_file, "a") as f:
+                        await f.write(domain + "\n")
+            elif error == "Not Found":
+                info(domain, "未找到过期日期")
+                # 未找到的写入 error.txt 文件
+                if error_file is not None:
+                    async with aiofiles.open(error_file, "a") as f:
+                        await f.write(domain + "\n")
             return
 
     is_expired_result = is_expired(expired_date)
