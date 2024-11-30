@@ -1,5 +1,4 @@
 import asyncio
-from pprint import pprint
 from whois21 import WHOIS
 
 from .result import Ok, Err, Result
@@ -82,8 +81,8 @@ if __name__ == "__main__":
         result = await query_expired_date("luogu.com.cn")
         match result:
             case Ok(value):
-                pprint(value)
+                print(value)
             case Err(error):
-                pprint(error)
+                print(error)
 
     asyncio.run(main())
