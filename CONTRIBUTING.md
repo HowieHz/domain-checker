@@ -64,8 +64,15 @@ pip freeze > requirements.txt
 pip install nuitka
 ```
 
-生成二进制文件
+生成二进制文件（在 Windows 环境下）
 
 ```shell
-nuitka .\src\main.py --standalone --onefile
+.\build-scripts\build_with_nuitka.bat
+```
+
+生成二进制文件（在 Linux 环境下）
+
+```bash
+chmod +x ./build-scripts/build_with_nuitka.sh
+./build-scripts/build_with_nuitka.sh
 ```
