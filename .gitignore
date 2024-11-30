@@ -1,3 +1,9 @@
+input.txt
+output.txt
+error.txt
+
+src/utils/whois.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
