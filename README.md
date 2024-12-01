@@ -31,6 +31,8 @@
   - [使用方法](#使用方法)
   - [使用示例](#使用示例)
     - [指定输出文件](#指定输出文件)
+    - [提高使用的进程数](#提高使用的进程数)
+    - [提高单个进程可使用使用的线程数](#提高单个进程可使用使用的线程数)
     - [安静模式](#安静模式)
   - [项目鸣谢](#项目鸣谢)
   - [开发指南](#开发指南)
@@ -43,7 +45,7 @@
 ## 使用方法
 
 ```bash
-usage: domain-checker.exe [-h] [-i INPUT] [-o OUTPUT] [-e ERROR] [-n NUM_PROCESSES]
+usage: domain-checker.exe [-h] [-i INPUT] [-o OUTPUT] [-e ERROR] [-p NUM_PROCESSES] [-t MAX_NUM_THREADS_PER_PROCESS] [-utl [True]]
                [-q [True]]
 
 options:
@@ -54,8 +56,12 @@ options:
                         指定保存过期域名的文件
   -e ERROR, --error ERROR
                         指定保存未能成功查询的域名的文件
-  -n NUM_PROCESSES, --num-processes NUM_PROCESSES
+  -p NUM_PROCESSES, --num-processes NUM_PROCESSES
                         指定并发进程数。默认为 1
+  -t MAX_NUM_THREADS_PER_PROCESS, --max-num-threads-per-process MAX_NUM_THREADS_PER_PROCESS
+                        指定每进程最大并发线程数。默认为 8
+  -utl [True], --unlock-threads-limit [True]
+                        解除线程最大值限制。--unlock-threads-limit 或 --unlock-threads-limit True 均可启用此选项
   -q [True], --quiet [True]
                         使程序减少输出。--quiet 或 --quiet True 均可启用此选项
 ```
@@ -102,6 +108,28 @@ input.txt 为 input 默认值，所以上面的指令也可以改写为
 
 ```bash
 domain-checker.exe -o output.txt -e error.txt
+```
+
+### 提高使用的进程数
+
+该指令会使用 32 进程查询。首先会把 input.txt 分成 32 份，放入 `./temp/temp_part_0.txt`、`./temp/temp_part_1.txt` …… `./temp/temp_part_31.txt`，后用 32 个进程分别查询。
+
+> 注：程序正常运行结束会清除 `./temp` 中产生的临时文件 `./temp/temp_part_0.txt`、`./temp/temp_part_1.txt` …… `./temp/temp_part_31.txt`
+
+```bash
+domain-checker.exe -p 32
+```
+
+### 提高单个进程可使用使用的线程数
+
+如果不设限，一般来说一个进程会用到的最大线程为：此进程要处理的文件总行数。
+
+例子：input.txt 有 100 行，开启了 `-p 10` 分配给 10 个进程，每个进程分配到 10 个需要检查的地址（也就是需要处理行数为 10 的文件）。那么不设限的情况下，每个进程会用到的最大线程数一般为 10。
+
+以下指令会将最大进程数提升到 9999。
+
+```bash
+domain-checker.exe -t 9999
 ```
 
 ### 安静模式

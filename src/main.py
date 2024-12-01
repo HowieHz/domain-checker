@@ -15,8 +15,10 @@ from utils.constant import (
     CLI_HELP_INPUT,
     CLI_HELP_MESSAGE,
     CLI_HELP_NUM_PROCESSES,
+    CLI_HELP_NUM_THREADS,
     CLI_HELP_OUTPUT,
     CLI_HELP_QUIET,
+    CLI_HELP_UNLOCK_THREADS_LIMIT,
     DESCRIPTION,
     INFO_API_LIMIT,
     INFO_ERROR_PARSING_DATE,
@@ -29,9 +31,14 @@ from utils.constant import (
 
 
 async def process_domain(
-    domain: str, output_file: Optional[str] = None, error_file: Optional[str] = None
+    domain: str,
+    output_file: Optional[str] = None,
+    error_file: Optional[str] = None,
+    max_num_threads_per_process: Optional[int] = None,
 ):
-    query_expired_date_result = await query_expired_date(domain)
+    query_expired_date_result = await query_expired_date(
+        domain, max_num_threads_per_process
+    )
 
     match query_expired_date_result:
         case Ok(value):
@@ -108,11 +115,27 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("-o", "--output", help=CLI_HELP_OUTPUT, type=str)
     parser.add_argument("-e", "--error", help=CLI_HELP_ERROR, type=str)
     parser.add_argument(
-        "-n",
+        "-p",
         "--num-processes",
         help=CLI_HELP_NUM_PROCESSES,
         type=int,
         default=1,
+    )
+    parser.add_argument(
+        "-t",
+        "--max-num-threads-per-process",
+        help=CLI_HELP_NUM_THREADS,
+        type=int,
+        default=8,
+    )
+    parser.add_argument(
+        "-utl",
+        "--unlock-threads-limit",
+        help=CLI_HELP_UNLOCK_THREADS_LIMIT,
+        type=str,
+        nargs="?",
+        const="True",  # 参数仅添加 -q 后没更参数
+        metavar="True",
     )
     parser.add_argument(
         "-q",
@@ -133,6 +156,11 @@ def arg_parse():
     if args.quiet is not None:
         os.environ["QUIET_FLAG"] = "True"
 
+    if args.unlock_threads_limit is not None:
+        max_num_threads_per_process = None
+    else:
+        max_num_threads_per_process = args.max_num_threads_per_process
+
     if args.input is None:
         input_file = "input.txt"
     else:
@@ -146,21 +174,30 @@ def arg_parse():
         output_file=args.output,
         error_file=args.error,
         num_processes=args.num_processes,
+        max_num_threads_per_process=max_num_threads_per_process,
     )
 
 
 async def process_file_part(
-    file_part: str, output_file: Optional[str], error_file: Optional[str]
+    file_part: str,
+    output_file: Optional[str],
+    error_file: Optional[str],
+    max_num_threads_per_process: Optional[int],
 ):
     # 读取文件中的域名，一行一个域名，节约内存的读法
     async with aiofiles.open(file_part, "r") as f:
         async for line in f:
             extracted_domain = tldextract.extract(line.strip())
             domain = extracted_domain.domain + "." + extracted_domain.suffix
-            await process_domain(domain, output_file, error_file)
+            await process_domain(
+                domain, output_file, error_file, max_num_threads_per_process
+            )
 
 
 def split_file(input_file: str, num_parts: int) -> list:
+    # 创建 temp 目录（如果不存在）
+    os.makedirs("./temp", exist_ok=True)
+
     with open(input_file, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
@@ -182,8 +219,17 @@ def split_file(input_file: str, num_parts: int) -> list:
     return file_parts
 
 
-def worker(file_part: str, output_file: Optional[str], error_file: Optional[str]):
-    asyncio.run(process_file_part(file_part, output_file, error_file))
+def worker(
+    file_part: str,
+    output_file: Optional[str],
+    error_file: Optional[str],
+    max_num_threads_per_process: Optional[int],
+):
+    asyncio.run(
+        process_file_part(
+            file_part, output_file, error_file, max_num_threads_per_process
+        )
+    )
 
 
 def main(
@@ -191,9 +237,14 @@ def main(
     output_file: Optional[str],
     error_file: Optional[str],
     num_processes: int,
-):  
-    if num_processes==1:
-        asyncio.run(process_file_part(input_file, output_file, error_file))
+    max_num_threads_per_process: Optional[int],
+):
+    if num_processes == 1:
+        asyncio.run(
+            process_file_part(
+                input_file, output_file, error_file, max_num_threads_per_process
+            )
+        )
         return
 
     file_parts = split_file(input_file, num_processes)
@@ -201,13 +252,18 @@ def main(
     processes = []
     for file_part in file_parts:
         p = multiprocessing.Process(
-            target=worker, args=(file_part, output_file, error_file)
+            target=worker,
+            args=(file_part, output_file, error_file, max_num_threads_per_process),
         )
         processes.append(p)
         p.start()
 
     for p in processes:
         p.join()
+
+    # 删除临时文件
+    for file_part in file_parts:
+        os.remove(file_part)
 
 
 if __name__ == "__main__":

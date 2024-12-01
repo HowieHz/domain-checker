@@ -1,6 +1,7 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from pprint import pprint
+from typing import Optional
 
 from whois21 import WHOIS
 
@@ -12,7 +13,7 @@ def query_whois(domain):
     return WHOIS(domain=domain, timeout=5)
 
 
-async def whois_query(domain: str) -> Result[dict, dict]:
+async def whois_query(domain: str, max_num_threads_per_process: Optional[int]) -> Result[dict, dict]:
     """通过 whois 查询域名信息
 
     Args:
@@ -23,7 +24,7 @@ async def whois_query(domain: str) -> Result[dict, dict]:
     """
     try:
         loop = asyncio.get_event_loop()
-        thread_pool_executor = ThreadPoolExecutor()
+        thread_pool_executor = ThreadPoolExecutor(max_workers=max_num_threads_per_process)
         result = await loop.run_in_executor(thread_pool_executor, query_whois, domain)
 
         status = result.get("DOMAIN STATUS")
@@ -58,7 +59,7 @@ async def whois_query(domain: str) -> Result[dict, dict]:
         return Err({"code": 500, "msg": e})
 
 
-async def query_expired_date(domain: str) -> Result[str, str]:
+async def query_expired_date(domain: str, max_num_threads_per_process: Optional[int]) -> Result[str, str]:
     """通过 whois 查询域名过期时间
 
     Args:
@@ -67,7 +68,7 @@ async def query_expired_date(domain: str) -> Result[str, str]:
     Returns:
         Result[str, str]: 过期时间，可能的形式为 2033-12-23T07:59:05Z 或 2033-12-23T07:59:05.000Z
     """
-    query_ret = await whois_query(domain)
+    query_ret = await whois_query(domain, max_num_threads_per_process)
 
     match query_ret:
         case Ok(value):
