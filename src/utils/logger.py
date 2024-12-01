@@ -11,11 +11,6 @@ if DEBUG_FLAG:
 
 def info(*message: str) -> None:
     quiet_flag: bool = bool(os.getenv("QUIET_FLAG"))
-    is_github_workflow: bool = bool(os.getenv("GITHUB_WORKFLOW"))
-    
-    if is_github_workflow:
-        print(f"[info]: {' '.join(message)}")
-        return
     
     if quiet_flag:
         return

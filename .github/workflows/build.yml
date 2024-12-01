@@ -27,9 +27,6 @@ jobs:
       - name: Run Script download travellings-cn-api all.json
         run: |
           python extra-scripts/travellings-cn-api/main.py
-      - name: "Set the env value"
-        run: |
-          echo "GITHUB_WORKFLOW=True" >> "$GITHUB_ENV"
       - name: Run Script check domain
         run: |
           python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt -n 32
