@@ -157,15 +157,20 @@ def split_file(input_file: str, num_parts: int) -> list:
     with open(input_file, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
-    part_size = len(lines) // num_parts
+    total_lines = len(lines)
+    part_size = total_lines // num_parts
+    remainder = total_lines % num_parts
     file_parts = []
 
+    start = 0
     for i in range(num_parts):
-        part_lines = lines[i * part_size : (i + 1) * part_size]
+        end = start + part_size + (1 if i < remainder else 0)
+        part_lines = lines[start:end]
         part_file = f"./temp/temp_part_{i}.txt"
         with open(part_file, "w", encoding="utf-8") as part_f:
             part_f.writelines(part_lines)
         file_parts.append(part_file)
+        start = end
 
     return file_parts
 
