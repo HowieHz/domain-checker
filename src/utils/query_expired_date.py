@@ -8,14 +8,7 @@ from .logger import debug
 
 
 def query_whois(domain):
-    print_thread_name()
     return WHOIS(domain=domain, timeout=5)
-
-
-def print_thread_name():
-    import threading
-    debug("当前线程名字：", threading.current_thread())
-
 
 async def whois_query(domain: str) -> Result[dict, dict]:
     """通过 whois 查询域名信息
