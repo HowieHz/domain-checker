@@ -1,12 +1,9 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from pprint import pprint
-from typing import Optional
 
 from whois21 import WHOIS
 
 from .types import Ok, Err, Result
-from .logger import debug
 
 
 def query_whois(domain):

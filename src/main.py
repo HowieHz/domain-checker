@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 import multiprocessing
 from typing import Optional
+from functools import partial
 import tldextract
 import asyncio
 import aiofiles
@@ -30,69 +31,94 @@ from utils.constant import (
     INFO_NOT_REGISTER,
 )
 
+background_tasks = set()
+
+
+def query_callback(
+    future: asyncio.Future,
+    output_file: Optional[str],
+    error_file: Optional[str],
+    domain: str,
+):
+    if future.cancelled():
+        print(f"The query for {domain} was cancelled.")
+    else:
+        query_expired_date_result = future.result()
+        print(f"Query result for {domain}: {query_expired_date_result}")
+    background_tasks.discard(future)
+
+    async def handle_result():
+        match query_expired_date_result:
+            case Ok(value):
+                expired_date = value
+            case Err(error):
+                if error == "Not Register":
+                    info(INFO_NOT_REGISTER.format(domain=domain))
+                    # 未注册算过期，写入 output.txt 文件
+                    if output_file is not None:
+                        async with aiofiles.open(output_file, "a") as f:
+                            await f.write(domain + "\n")
+                elif error == "Not Found":
+                    info(INFO_NOT_FOUND_DATE.format(domain=domain))
+                    # 未找到的写入 error.txt 文件
+                    if error_file is not None:
+                        async with aiofiles.open(error_file, "a") as f:
+                            await f.write(domain + "\n")
+                elif error == "API Limit":
+                    info(INFO_API_LIMIT.format(domain=domain))
+                    # API 限制的写入 error.txt 文件
+                    if error_file is not None:
+                        async with aiofiles.open(error_file, "a") as f:
+                            await f.write(domain + "\n")
+                else:
+                    info(
+                        (
+                            INFO_INTERNET_ERROR + error.removeprefix("Internat Error")
+                        ).format(domain=domain)
+                    )
+                    # 解析失败的写入 error.txt 文件
+                    if error_file is not None:
+                        async with aiofiles.open(error_file, "a") as f:
+                            await f.write(domain + "\n")
+                return
+
+        is_expired_result = is_expired(expired_date)
+        match is_expired_result:
+            case Ok(value):
+                is_expired_bool = value
+            case Err(_error):
+                info(INFO_ERROR_PARSING_DATE.format(domain=domain))
+                # 解析失败的写入 error.txt 文件
+                if error_file is not None:
+                    async with aiofiles.open(error_file, "a") as f:
+                        await f.write(domain + "\n")
+                return
+
+        if is_expired_bool:
+            info(INFO_EXPIRED.format(domain=domain))
+            # 已过期的写入 output.txt 文件
+            if output_file is not None:
+                async with aiofiles.open(output_file, "a") as f:
+                    await f.write(domain + "\n")
+        else:
+            info(INFO_NOT_EXPIRED.format(domain=domain))
+
+    asyncio.run_coroutine_threadsafe(handle_result(), asyncio.get_event_loop())
+
 
 async def process_domain(
     domain: str,
     thread_pool_executor: ThreadPoolExecutor,
     output_file: Optional[str] = None,
     error_file: Optional[str] = None,
-):
-    query_expired_date_result = await query_expired_date(domain, thread_pool_executor)
+) -> asyncio.Task:
+    task = asyncio.create_task(query_expired_date(domain, thread_pool_executor))
+    background_tasks.add(task)
+    callback_funcation = partial(query_callback, output_file=output_file, error_file=error_file, domain=domain)
+    
+    task.add_done_callback(callback_funcation)
 
-    match query_expired_date_result:
-        case Ok(value):
-            expired_date = value
-        case Err(error):
-            if error == "Not Register":
-                info(INFO_NOT_REGISTER.format(domain=domain))
-                # 未注册算过期，写入 output.txt 文件
-                if output_file is not None:
-                    async with aiofiles.open(output_file, "a") as f:
-                        await f.write(domain + "\n")
-            elif error == "Not Found":
-                info(INFO_NOT_FOUND_DATE.format(domain=domain))
-                # 未找到的写入 error.txt 文件
-                if error_file is not None:
-                    async with aiofiles.open(error_file, "a") as f:
-                        await f.write(domain + "\n")
-            elif error == "API Limit":
-                info(INFO_API_LIMIT.format(domain=domain))
-                # API 限制的写入 error.txt 文件
-                if error_file is not None:
-                    async with aiofiles.open(error_file, "a") as f:
-                        await f.write(domain + "\n")
-            else:
-                info(
-                    (INFO_INTERNET_ERROR + error.removeprefix("Internat Error")).format(
-                        domain=domain
-                    )
-                )
-                # 解析失败的写入 error.txt 文件
-                if error_file is not None:
-                    async with aiofiles.open(error_file, "a") as f:
-                        await f.write(domain + "\n")
-            return
-
-    is_expired_result = is_expired(expired_date)
-    match is_expired_result:
-        case Ok(value):
-            is_expired_bool = value
-        case Err(_error):
-            info(INFO_ERROR_PARSING_DATE.format(domain=domain))
-            # 解析失败的写入 error.txt 文件
-            if error_file is not None:
-                async with aiofiles.open(error_file, "a") as f:
-                    await f.write(domain + "\n")
-            return
-
-    if is_expired_bool:
-        info(INFO_EXPIRED.format(domain=domain))
-        # 已过期的写入 output.txt 文件
-        if output_file is not None:
-            async with aiofiles.open(output_file, "a") as f:
-                await f.write(domain + "\n")
-    else:
-        info(INFO_NOT_EXPIRED.format(domain=domain))
+    return task
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -183,17 +209,24 @@ async def process_file_part(
     error_file: Optional[str],
     thread_pool_executor=ThreadPoolExecutor,
 ):
+    l: asyncio.Task = []
+
     # 读取文件中的域名，一行一个域名，节约内存的读法
     async with aiofiles.open(file_part, "r") as f:
         async for line in f:
             extracted_domain = tldextract.extract(line.strip())
             domain = extracted_domain.domain + "." + extracted_domain.suffix
-            await process_domain(
-                domain=domain,
-                output_file=output_file,
-                error_file=error_file,
-                thread_pool_executor=thread_pool_executor,
+            l.append(
+                process_domain(
+                    domain=domain,
+                    output_file=output_file,
+                    error_file=error_file,
+                    thread_pool_executor=thread_pool_executor,
+                )
             )
+
+    # 等待所有任务完成
+    await asyncio.gather(*l)
 
 
 def split_file(input_file: str, num_parts: int) -> list:
@@ -239,10 +272,10 @@ def main(
     num_processes: int,
     max_num_threads_per_process: Optional[int],
 ):
-
-    thread_pool_executor = ThreadPoolExecutor(max_workers=max_num_threads_per_process)
-
     if num_processes == 1:
+        thread_pool_executor = ThreadPoolExecutor(
+            max_workers=max_num_threads_per_process
+        )
         asyncio.run(
             process_file_part(input_file, output_file, error_file, thread_pool_executor)
         )
@@ -252,6 +285,9 @@ def main(
 
     processes = []
     for file_part in file_parts:
+        thread_pool_executor = ThreadPoolExecutor(
+            max_workers=max_num_threads_per_process
+        )
         p = multiprocessing.Process(
             target=worker,
             args=(file_part, output_file, error_file, thread_pool_executor),

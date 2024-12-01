@@ -7,6 +7,7 @@ src/utils/whois.py
 main.dist
 
 main.exe
+result.json
 
 temp/
 bin/
