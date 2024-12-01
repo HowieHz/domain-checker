@@ -59,7 +59,7 @@ options:
   -p NUM_PROCESSES, --num-processes NUM_PROCESSES
                         指定并发进程数。默认为 1
   -t MAX_NUM_THREADS_PER_PROCESS, --max-num-threads-per-process MAX_NUM_THREADS_PER_PROCESS
-                        指定每进程最大并发线程数。默认为 8
+                        指定每进程最大并发线程数。默认为 80
   -utl [True], --unlock-threads-limit [True]
                         解除线程最大值限制。--unlock-threads-limit 或 --unlock-threads-limit True 均可启用此选项
   -q [True], --quiet [True]

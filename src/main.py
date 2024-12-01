@@ -126,7 +126,7 @@ def create_parser() -> argparse.ArgumentParser:
         "--max-num-threads-per-process",
         help=CLI_HELP_NUM_THREADS,
         type=int,
-        default=8,
+        default=80,
     )
     parser.add_argument(
         "-utl",
