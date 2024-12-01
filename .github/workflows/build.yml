@@ -1,0 +1,41 @@
+name: Check travellings-cn-Project expiration domain
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 6 * * *'
+
+jobs:
+  build:
+    name: check travellings-cn-project expiration domain
+    runs-on: ubuntu-latest
+    steps:
+      - name: Make Target Directory
+        run: |
+          pwd
+          mkdir -p ~/builds/target
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12' 
+      - name: Donwload required lib
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Run Script download travellings-cn-api all.json
+        run: |
+          python extra-scripts/travellings-cn-api/main.py
+      - name: "Set the env value"
+        run: |
+          echo "GITHUB_WORKFLOW=True" >> "$GITHUB_ENV"
+      - name: Run Script check domain
+        run: |
+          python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt
+
+      - name: Upload Theme Build Target
+        uses: actions/upload-artifact@v4
+        with:
+          name: theme-artifact
+          path: ~/builds/target/*
