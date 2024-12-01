@@ -32,10 +32,10 @@ jobs:
           echo "GITHUB_WORKFLOW=True" >> "$GITHUB_ENV"
       - name: Run Script check domain
         run: |
-          python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt
+          python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt -n 32
 
-      - name: Upload Theme Build Target
+      - name: Upload Output Target
         uses: actions/upload-artifact@v4
         with:
-          name: theme-artifact
+          name: output
           path: ~/builds/target/*
