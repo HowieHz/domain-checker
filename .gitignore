@@ -9,6 +9,7 @@ main.dist
 main.exe
 
 temp/
+bin/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

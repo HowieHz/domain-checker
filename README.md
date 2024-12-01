@@ -42,7 +42,7 @@
 ## 使用方法
 
 ```bash
-usage: main.py [-h] [-i INPUT] [-o OUTPUT] [-e ERROR] [-q [True]]
+usage: domain-checker.exe [-h] [-i INPUT] [-o OUTPUT] [-e ERROR] [-q [True]]
 
 options:
   -h, --help            显示此帮助信息并退出程序
@@ -69,18 +69,18 @@ www.luogu.com.cn/index.html?id=1
 aaa.www.luogu.com.cn/aaaa/aaaa
 ```
 
-运行以下指令（假设二进制文件名为 `main.exe`）
+运行以下指令（假设二进制文件名为 `domain-checker.exe`）
 
 如果仅想在终端查看结果，而不想输出结果到文件，可以使用以下指令
 
 ```bash
-main.exe -i input.txt
+domain-checker.exe -i input.txt
 ```
 
 input.txt 为 input 默认值，所以上面的指令也可以改写为
 
 ```bash
-main.exe
+domain-checker.exe
 ```
 
 ### 指定输出文件
@@ -91,13 +91,13 @@ main.exe
 > 指令指定的 input.txt output.txt error.txt 无需提前创建
 
 ```bash
-main.exe -i input.txt -o output.txt -e error.txt
+domain-checker.exe -i input.txt -o output.txt -e error.txt
 ```
 
 input.txt 为 input 默认值，所以上面的指令也可以改写为
 
 ```bash
-main.exe -o output.txt -e error.txt
+domain-checker.exe -o output.txt -e error.txt
 ```
 
 ### 安静模式
@@ -105,7 +105,7 @@ main.exe -o output.txt -e error.txt
 如果仅想要将结果输出到文件，终端不输出处理结果，可以使用以下指令
 
 ```bash
-main.exe -q -o output.txt -e error.txt
+domain-checker.exe -q -o output.txt -e error.txt
 ```
 
 ## 项目鸣谢
