@@ -105,7 +105,7 @@ def create_parser() -> argparse.ArgumentParser:
         "--num-processes",
         help=CLI_HELP_NUM_PROCESSES,
         type=int,
-        default=4,
+        default=1,
     )
     parser.add_argument(
         "-q",
@@ -184,7 +184,11 @@ def main(
     output_file: Optional[str],
     error_file: Optional[str],
     num_processes: int,
-):
+):  
+    if num_processes==1:
+        asyncio.run(process_file_part(input_file, output_file, error_file))
+        return
+
     file_parts = split_file(input_file, num_processes)
 
     processes = []

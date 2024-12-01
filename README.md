@@ -55,7 +55,7 @@ options:
   -e ERROR, --error ERROR
                         指定保存未能成功查询的域名的文件
   -n NUM_PROCESSES, --num-processes NUM_PROCESSES
-                        指定并发进程数。默认为 4
+                        指定并发进程数。默认为 1
   -q [True], --quiet [True]
                         使程序减少输出。--quiet 或 --quiet True 均可启用此选项
 ```
