@@ -18,6 +18,7 @@ from utils.constant import (
     CLI_HELP_OUTPUT,
     CLI_HELP_QUIET,
     DESCRIPTION,
+    INFO_API_LIMIT,
     INFO_ERROR_PARSING_DATE,
     INFO_EXPIRED,
     INFO_INTERNET_ERROR,
@@ -45,6 +46,12 @@ async def process_domain(
             elif error == "Not Found":
                 info(INFO_NOT_FOUND_DATE.format(domain=domain))
                 # 未找到的写入 error.txt 文件
+                if error_file is not None:
+                    async with aiofiles.open(error_file, "a") as f:
+                        await f.write(domain + "\n")
+            elif error == "API Limit":
+                info(INFO_API_LIMIT.format(domain=domain))
+                # API 限制的写入 error.txt 文件
                 if error_file is not None:
                     async with aiofiles.open(error_file, "a") as f:
                         await f.write(domain + "\n")

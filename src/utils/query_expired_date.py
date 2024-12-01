@@ -1,5 +1,6 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from pprint import pprint
 
 from whois21 import WHOIS
 
@@ -9,6 +10,7 @@ from .logger import debug
 
 def query_whois(domain):
     return WHOIS(domain=domain, timeout=5)
+
 
 async def whois_query(domain: str) -> Result[dict, dict]:
     """通过 whois 查询域名信息
@@ -84,10 +86,20 @@ async def query_expired_date(domain: str) -> Result[str, str]:
             return Ok(line.removeprefix("Expiration Time: ").strip())
         if "Registry Expiry Date" in line:
             return Ok(line.removeprefix("Registry Expiry Date: ").strip())
-    if result["register"] == False:
-        return Err("Not Register")  # 未注册
-    debug(f"{domain} 未找到过期时间", result)
-    return Err("Not Found Date")
+
+    if result["register"] != False:
+        # debug(f"{domain} 未找到过期时间", result)
+        return Err("Not Found Date")
+    
+    # reigter 为 False 时，未注册 or API 限制
+
+    for line in result["raw"].split("\n"):
+        if "Your access is too fast,please try again later" in line:
+            return Err("API Limit")  # API 限制
+
+    return Err("Not Register")  # 未注册
+
+   
 
 
 if __name__ == "__main__":
