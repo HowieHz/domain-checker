@@ -1,6 +1,6 @@
 import datetime
 
-from .result import Ok, Err, Result
+from ..types import Ok, Err, Result
 
 def is_expired(orginal_time: str) -> Result[bool, Exception]:
     """检查域名是否过期

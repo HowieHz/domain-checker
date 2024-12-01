@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import multiprocessing
 from typing import Optional
 import tldextract
@@ -6,9 +7,9 @@ import aiofiles
 import argparse
 import os
 
-from utils.is_expired import is_expired
+from utils.tools import is_expired
 from utils.query_expired_date import query_expired_date
-from utils.result import Ok, Err
+from utils.types import Ok, Err
 from utils.logger import info
 from utils.constant import (
     CLI_HELP_ERROR,
@@ -32,13 +33,11 @@ from utils.constant import (
 
 async def process_domain(
     domain: str,
+    thread_pool_executor: ThreadPoolExecutor,
     output_file: Optional[str] = None,
     error_file: Optional[str] = None,
-    max_num_threads_per_process: Optional[int] = None,
 ):
-    query_expired_date_result = await query_expired_date(
-        domain, max_num_threads_per_process
-    )
+    query_expired_date_result = await query_expired_date(domain, thread_pool_executor)
 
     match query_expired_date_result:
         case Ok(value):
@@ -182,7 +181,7 @@ async def process_file_part(
     file_part: str,
     output_file: Optional[str],
     error_file: Optional[str],
-    max_num_threads_per_process: Optional[int],
+    thread_pool_executor=ThreadPoolExecutor,
 ):
     # 读取文件中的域名，一行一个域名，节约内存的读法
     async with aiofiles.open(file_part, "r") as f:
@@ -190,7 +189,10 @@ async def process_file_part(
             extracted_domain = tldextract.extract(line.strip())
             domain = extracted_domain.domain + "." + extracted_domain.suffix
             await process_domain(
-                domain, output_file, error_file, max_num_threads_per_process
+                domain=domain,
+                output_file=output_file,
+                error_file=error_file,
+                thread_pool_executor=thread_pool_executor,
             )
 
 
@@ -223,12 +225,10 @@ def worker(
     file_part: str,
     output_file: Optional[str],
     error_file: Optional[str],
-    max_num_threads_per_process: Optional[int],
+    thread_pool_executor: ThreadPoolExecutor,
 ):
     asyncio.run(
-        process_file_part(
-            file_part, output_file, error_file, max_num_threads_per_process
-        )
+        process_file_part(file_part, output_file, error_file, thread_pool_executor)
     )
 
 
@@ -239,11 +239,12 @@ def main(
     num_processes: int,
     max_num_threads_per_process: Optional[int],
 ):
+
+    thread_pool_executor = ThreadPoolExecutor(max_workers=max_num_threads_per_process)
+
     if num_processes == 1:
         asyncio.run(
-            process_file_part(
-                input_file, output_file, error_file, max_num_threads_per_process
-            )
+            process_file_part(input_file, output_file, error_file, thread_pool_executor)
         )
         return
 
@@ -253,7 +254,7 @@ def main(
     for file_part in file_parts:
         p = multiprocessing.Process(
             target=worker,
-            args=(file_part, output_file, error_file, max_num_threads_per_process),
+            args=(file_part, output_file, error_file, thread_pool_executor),
         )
         processes.append(p)
         p.start()
