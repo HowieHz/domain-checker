@@ -8,6 +8,7 @@
 ![GitHub repo size](https://img.shields.io/github/repo-size/HowieHz/domain-checker)
 
 - 异步查询
+- 多进程并发
 
 ## 为什么写这个小工具
 
@@ -42,7 +43,8 @@
 ## 使用方法
 
 ```bash
-usage: domain-checker.exe [-h] [-i INPUT] [-o OUTPUT] [-e ERROR] [-q [True]]
+usage: domain-checker.exe [-h] [-i INPUT] [-o OUTPUT] [-e ERROR] [-n NUM_PROCESSES]
+               [-q [True]]
 
 options:
   -h, --help            显示此帮助信息并退出程序
@@ -52,6 +54,8 @@ options:
                         指定保存过期域名的文件
   -e ERROR, --error ERROR
                         指定保存未能成功查询的域名的文件
+  -n NUM_PROCESSES, --num-processes NUM_PROCESSES
+                        指定并发进程数。默认为 4
   -q [True], --quiet [True]
                         使程序减少输出。--quiet 或 --quiet True 均可启用此选项
 ```
