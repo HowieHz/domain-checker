@@ -1,5 +1,6 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Coroutine
 
 from whois21 import WHOIS
 
@@ -12,7 +13,7 @@ def query_whois(domain):
 
 async def whois_query(
     domain: str, thread_pool_executor: ThreadPoolExecutor
-) -> Result[dict, dict]:
+) -> Coroutine[Any, Any, Result[dict, dict]]:
     """通过 whois 查询域名信息
 
     Args:
@@ -59,7 +60,7 @@ async def whois_query(
 
 async def query_expired_date(
     domain: str, thread_pool_executor: ThreadPoolExecutor
-) -> Result[str, str]:
+) -> Coroutine[Any, Any, Result[str, str]]:
     """通过 whois 查询域名过期时间
 
     Args:

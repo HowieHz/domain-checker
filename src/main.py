@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 import multiprocessing
-from typing import Optional
+from typing import Any, Coroutine, Optional
 from functools import partial
 import tldextract
 import asyncio
@@ -31,18 +31,19 @@ from utils.constant import (
     INFO_NOT_REGISTER,
 )
 
+
 async def process_domain(
     domain: str,
     thread_pool_executor: ThreadPoolExecutor,
     output_file: Optional[str] = None,
     error_file: Optional[str] = None,
-) -> asyncio.Task:
-    fature = asyncio.shield(asyncio.create_task(query_expired_date(domain, thread_pool_executor)))
-    query_expired_date_result = await fature
+) -> Coroutine[Any, Any, None]:
+    future = asyncio.shield(
+        asyncio.create_task(query_expired_date(domain, thread_pool_executor))
+    )
+    query_expired_date_result = await future
 
     match query_expired_date_result:
-        case Ok(value):
-            expired_date = value
         case Err(error):
             if error == "Not Register":
                 info(INFO_NOT_REGISTER.format(domain=domain))
@@ -64,15 +65,17 @@ async def process_domain(
                         await f.write(domain + "\n")
             else:
                 info(
-                    (
-                        INFO_INTERNET_ERROR + error.removeprefix("Internat Error")
-                    ).format(domain=domain)
+                    (INFO_INTERNET_ERROR + error.removeprefix("Internat Error")).format(
+                        domain=domain
+                    )
                 )
                 # 解析失败的写入 error.txt 文件
                 if error_file is not None:
                     async with aiofiles.open(error_file, "a") as f:
                         await f.write(domain + "\n")
             return
+        case Ok(value):
+            expired_date = value
 
     is_expired_result = is_expired(expired_date)
     match is_expired_result:
@@ -94,6 +97,7 @@ async def process_domain(
                 await f.write(domain + "\n")
     else:
         info(INFO_NOT_EXPIRED.format(domain=domain))
+
 
 def create_parser() -> argparse.ArgumentParser:
     prefix_chars: str = "-"
