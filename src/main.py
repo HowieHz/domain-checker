@@ -18,6 +18,12 @@ from utils.constant import (
     CLI_HELP_OUTPUT,
     CLI_HELP_QUIET,
     DESCRIPTION,
+    INFO_ERROR_PARSING_DATE,
+    INFO_EXPIRED,
+    INFO_INTERNET_ERROR,
+    INFO_NOT_EXPIRED,
+    INFO_NOT_FOUND_DATE,
+    INFO_NOT_REGISTER,
 )
 
 
@@ -31,14 +37,24 @@ async def process_domain(
             expired_date = value
         case Err(error):
             if error == "Not Register":
-                info(domain, "未注册")
+                info(INFO_NOT_REGISTER.format(domain=domain))
                 # 未注册算过期，写入 output.txt 文件
                 if output_file is not None:
                     async with aiofiles.open(output_file, "a") as f:
                         await f.write(domain + "\n")
             elif error == "Not Found":
-                info(domain, "未找到过期日期")
+                info(INFO_NOT_FOUND_DATE.format(domain=domain))
                 # 未找到的写入 error.txt 文件
+                if error_file is not None:
+                    async with aiofiles.open(error_file, "a") as f:
+                        await f.write(domain + "\n")
+            else:
+                info(
+                    (INFO_INTERNET_ERROR + error.removeprefix("Internat Error")).format(
+                        domain=domain
+                    )
+                )
+                # 解析失败的写入 error.txt 文件
                 if error_file is not None:
                     async with aiofiles.open(error_file, "a") as f:
                         await f.write(domain + "\n")
@@ -49,7 +65,7 @@ async def process_domain(
         case Ok(value):
             is_expired_bool = value
         case Err(_error):
-            info(domain, "日期解析失败")
+            info(INFO_ERROR_PARSING_DATE.format(domain=domain))
             # 解析失败的写入 error.txt 文件
             if error_file is not None:
                 async with aiofiles.open(error_file, "a") as f:
@@ -57,13 +73,14 @@ async def process_domain(
             return
 
     if is_expired_bool:
-        info(domain, "已过期")
+        info(INFO_EXPIRED.format(domain=domain))
         # 已过期的写入 output.txt 文件
         if output_file is not None:
             async with aiofiles.open(output_file, "a") as f:
                 await f.write(domain + "\n")
     else:
-        info(domain, "未过期")
+        info(INFO_NOT_EXPIRED.format(domain=domain))
+
 
 def create_parser() -> argparse.ArgumentParser:
     prefix_chars: str = "-"
@@ -115,17 +132,26 @@ def arg_parse():
         input_file = args.input
 
     # asyncio.run(
-        
-    # )
-    main(input_file=input_file, output_file=args.output, error_file=args.error, num_processes=args.num_processes)
 
-async def process_file_part(file_part: str, output_file: Optional[str], error_file: Optional[str]):
+    # )
+    main(
+        input_file=input_file,
+        output_file=args.output,
+        error_file=args.error,
+        num_processes=args.num_processes,
+    )
+
+
+async def process_file_part(
+    file_part: str, output_file: Optional[str], error_file: Optional[str]
+):
     # 读取文件中的域名，一行一个域名，节约内存的读法
     async with aiofiles.open(file_part, "r") as f:
         async for line in f:
             extracted_domain = tldextract.extract(line.strip())
             domain = extracted_domain.domain + "." + extracted_domain.suffix
             await process_domain(domain, output_file, error_file)
+
 
 def split_file(input_file: str, num_parts: int) -> list:
     with open(input_file, "r", encoding="utf-8") as f:
@@ -135,7 +161,7 @@ def split_file(input_file: str, num_parts: int) -> list:
     file_parts = []
 
     for i in range(num_parts):
-        part_lines = lines[i * part_size: (i + 1) * part_size]
+        part_lines = lines[i * part_size : (i + 1) * part_size]
         part_file = f"./temp/temp_part_{i}.txt"
         with open(part_file, "w", encoding="utf-8") as part_f:
             part_f.writelines(part_lines)
@@ -143,20 +169,30 @@ def split_file(input_file: str, num_parts: int) -> list:
 
     return file_parts
 
+
 def worker(file_part: str, output_file: Optional[str], error_file: Optional[str]):
     asyncio.run(process_file_part(file_part, output_file, error_file))
 
-def main(input_file: str, output_file: Optional[str], error_file: Optional[str], num_processes: int):
+
+def main(
+    input_file: str,
+    output_file: Optional[str],
+    error_file: Optional[str],
+    num_processes: int,
+):
     file_parts = split_file(input_file, num_processes)
 
     processes = []
     for file_part in file_parts:
-        p = multiprocessing.Process(target=worker, args=(file_part, output_file, error_file))
+        p = multiprocessing.Process(
+            target=worker, args=(file_part, output_file, error_file)
+        )
         processes.append(p)
         p.start()
 
     for p in processes:
         p.join()
+
 
 if __name__ == "__main__":
     arg_parse()

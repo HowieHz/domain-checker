@@ -66,20 +66,22 @@ async def query_expired_date(domain: str) -> Result[str, str]:
             result = value
         case Err(_error):
             return Err("Not Found")
-
-    if result["code"] == 200:
-        if result["expired_date"] is not None:
-            return Ok(result["expired_date"])
-        # 一行一行遍历 raw 结果，找到包含 'Expiration Time' 的行
-        for line in result["raw"].split("\n"):
-            if "Expiration Time" in line:
-                return Ok(line.removeprefix("Expiration Time: ").strip())
-            if "Registry Expiry Date" in line:
-                return Ok(line.removeprefix("Registry Expiry Date: ").strip())
-        if result["register"] == False:
-            return Err("Not Register")  # 未注册
-        debug(f"{domain} 未找到过期时间", result)
-        return Err("Not Found Date")
+    
+    if result["code"] != 200:
+        return Err(f"Internat Error {result['code']}")
+    
+    if result["expired_date"] is not None:
+        return Ok(result["expired_date"])
+    # 一行一行遍历 raw 结果，找到包含 'Expiration Time' 的行
+    for line in result["raw"].split("\n"):
+        if "Expiration Time" in line:
+            return Ok(line.removeprefix("Expiration Time: ").strip())
+        if "Registry Expiry Date" in line:
+            return Ok(line.removeprefix("Registry Expiry Date: ").strip())
+    if result["register"] == False:
+        return Err("Not Register")  # 未注册
+    debug(f"{domain} 未找到过期时间", result)
+    return Err("Not Found Date")
 
 
 if __name__ == "__main__":
