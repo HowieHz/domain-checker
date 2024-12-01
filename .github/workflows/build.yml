@@ -1,9 +1,6 @@
 name: Check travellings-cn-Project expiration domain
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
   schedule:
     - cron: '0 6 * * *'
 
@@ -28,14 +25,17 @@ jobs:
           python extra-scripts/travellings-cn-api/main.py
       - name: Run Script To Check Domain Expiration
         run: |
-          python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt -p 1 -utl
+          python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt -p 1 --unlock-threads-limit
       - name: Check and Retry Error Status Domain
         run: |
-          max_retries=5
+          max_retries=2
           retries=0
           while [ -s ~/builds/target/error.txt ] && [ $retries -lt $max_retries ]; do
+            echo "Sleeping for 180 seconds before retrying"
+            sleep 180
+            echo "Retrying $retries+1 of $max_retries"
             mv ~/builds/target/error.txt ~/builds/temp/error.txt
-            python src/main.py -i ~/builds/temp/error.txt -o ~/builds/target/output.txt -e ~/builds/target/error.txt -p 1 -utl
+            python src/main.py -i ~/builds/temp/error.txt -o ~/builds/target/output.txt -e ~/builds/target/error.txt -p 1 --unlock-threads-limit
             rm ~/builds/temp/error.txt
             retries=$((retries + 1))
           done
