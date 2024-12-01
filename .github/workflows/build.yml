@@ -31,8 +31,8 @@ jobs:
           max_retries=2
           retries=0
           while [ -s ~/builds/target/error.txt ] && [ $retries -lt $max_retries ]; do
-            echo "Sleeping for 180 seconds before retrying"
-            sleep 180
+            echo "Sleeping for 60 seconds before retrying"
+            sleep 60
             echo "Retrying $retries+1 of $max_retries"
             mv ~/builds/target/error.txt ~/builds/temp/error.txt
             python src/main.py -i ~/builds/temp/error.txt -o ~/builds/target/output.txt -e ~/builds/target/error.txt -p 1 --unlock-threads-limit
