@@ -29,7 +29,7 @@ jobs:
           python extra-scripts/travellings-cn-api/main.py
       - name: Run Script check domain
         run: |
-          python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt -p 4 -t 28
+          python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt -p 1 -t 112
       - name: Upload Output Target
         uses: actions/upload-artifact@v4
         with:
