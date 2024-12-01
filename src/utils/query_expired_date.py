@@ -1,8 +1,20 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
 from whois21 import WHOIS
 
 from .result import Ok, Err, Result
 from .logger import debug
+
+
+def query_whois(domain):
+    print_thread_name()
+    return WHOIS(domain=domain, timeout=5)
+
+
+def print_thread_name():
+    import threading
+    debug("当前线程名字：", threading.current_thread())
 
 
 async def whois_query(domain: str) -> Result[dict, dict]:
@@ -16,7 +28,8 @@ async def whois_query(domain: str) -> Result[dict, dict]:
     """
     try:
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(None, WHOIS, domain)
+        thread_pool_executor = ThreadPoolExecutor()
+        result = await loop.run_in_executor(thread_pool_executor, query_whois, domain)
 
         status = result.get("DOMAIN STATUS")
         if type(status) is not list:
@@ -66,10 +79,10 @@ async def query_expired_date(domain: str) -> Result[str, str]:
             result = value
         case Err(_error):
             return Err("Not Found")
-    
+
     if result["code"] != 200:
         return Err(f"Internat Error {result['code']}")
-    
+
     if result["expired_date"] is not None:
         return Ok(result["expired_date"])
     # 一行一行遍历 raw 结果，找到包含 'Expiration Time' 的行
