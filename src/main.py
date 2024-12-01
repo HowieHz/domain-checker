@@ -1,3 +1,4 @@
+import multiprocessing
 from typing import Optional
 import tldextract
 import asyncio
@@ -13,6 +14,7 @@ from utils.constant import (
     CLI_HELP_ERROR,
     CLI_HELP_INPUT,
     CLI_HELP_MESSAGE,
+    CLI_HELP_NUM_PROCESSES,
     CLI_HELP_OUTPUT,
     CLI_HELP_QUIET,
     DESCRIPTION,
@@ -63,20 +65,6 @@ async def process_domain(
     else:
         info(domain, "未过期")
 
-
-async def main(
-    input_file: str,
-    output_file: Optional[str] = None,
-    error_file: Optional[str] = None,
-):
-    # 读取 input.txt 文件中的域名，一行一个域名，节约内存的读法
-    async with aiofiles.open(input_file, "r") as f:
-        async for line in f:
-            extracted_domain = tldextract.extract(line.strip())
-            domain = extracted_domain.domain + "." + extracted_domain.suffix
-            await process_domain(domain, output_file, error_file)
-
-
 def create_parser() -> argparse.ArgumentParser:
     prefix_chars: str = "-"
     parser = argparse.ArgumentParser(
@@ -95,6 +83,13 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("-i", "--input", help=CLI_HELP_INPUT, type=str)
     parser.add_argument("-o", "--output", help=CLI_HELP_OUTPUT, type=str)
     parser.add_argument("-e", "--error", help=CLI_HELP_ERROR, type=str)
+    parser.add_argument(
+        "-n",
+        "--num-processes",
+        help=CLI_HELP_NUM_PROCESSES,
+        type=int,
+        default=4,
+    )
     parser.add_argument(
         "-q",
         "--quiet",
@@ -119,10 +114,49 @@ def arg_parse():
     else:
         input_file = args.input
 
-    asyncio.run(
-        main(input_file=input_file, output_file=args.output, error_file=args.error)
-    )
+    # asyncio.run(
+        
+    # )
+    main(input_file=input_file, output_file=args.output, error_file=args.error, num_processes=args.num_processes)
 
+async def process_file_part(file_part: str, output_file: Optional[str], error_file: Optional[str]):
+    # 读取文件中的域名，一行一个域名，节约内存的读法
+    async with aiofiles.open(file_part, "r") as f:
+        async for line in f:
+            extracted_domain = tldextract.extract(line.strip())
+            domain = extracted_domain.domain + "." + extracted_domain.suffix
+            await process_domain(domain, output_file, error_file)
+
+def split_file(input_file: str, num_parts: int) -> list:
+    with open(input_file, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    part_size = len(lines) // num_parts
+    file_parts = []
+
+    for i in range(num_parts):
+        part_lines = lines[i * part_size: (i + 1) * part_size]
+        part_file = f"./temp/temp_part_{i}.txt"
+        with open(part_file, "w", encoding="utf-8") as part_f:
+            part_f.writelines(part_lines)
+        file_parts.append(part_file)
+
+    return file_parts
+
+def worker(file_part: str, output_file: Optional[str], error_file: Optional[str]):
+    asyncio.run(process_file_part(file_part, output_file, error_file))
+
+def main(input_file: str, output_file: Optional[str], error_file: Optional[str], num_processes: int):
+    file_parts = split_file(input_file, num_processes)
+
+    processes = []
+    for file_part in file_parts:
+        p = multiprocessing.Process(target=worker, args=(file_part, output_file, error_file))
+        processes.append(p)
+        p.start()
+
+    for p in processes:
+        p.join()
 
 if __name__ == "__main__":
     arg_parse()
