@@ -51,7 +51,7 @@ async def process_domain(
                 if output_file is not None:
                     async with aiofiles.open(output_file, "a") as f:
                         await f.write(domain + "\n")
-            elif error == "Not Found":
+            elif error == "Not Found Date":
                 info(INFO_NOT_FOUND_DATE.format(domain=domain))
                 # 未找到的写入 error.txt 文件
                 if error_file is not None:
@@ -65,7 +65,7 @@ async def process_domain(
                         await f.write(domain + "\n")
             else:
                 info(
-                    (INFO_INTERNET_ERROR + error.removeprefix("Internat Error")).format(
+                    (INFO_INTERNET_ERROR + " " + error.removeprefix("Internat Error ")).format(
                         domain=domain
                     )
                 )

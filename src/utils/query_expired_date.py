@@ -74,8 +74,8 @@ async def query_expired_date(
     match query_ret:
         case Ok(value):
             result = value
-        case Err(_error):
-            return Err("Not Found")
+        case Err(error):
+            return Err(f"Internat Error {str(error['msg'])}")
 
     if result["code"] != 200:
         return Err(f"Internat Error {result['code']}")
@@ -99,6 +99,11 @@ async def query_expired_date(
         if "Your access is too fast,please try again later" in line:
             return Err("API Limit")  # API 限制
 
+    for line in result["raw"].split("\n"):
+        if "The queried object does not exist: DOMAIN NOT FOUND" in line:
+            return Err("API Limit")  # API 限制
+
+    # 解析失败
     return Err("Not Register")  # 未注册
 
 
