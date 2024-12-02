@@ -1,4 +1,4 @@
-VERSION = "v1.0.0"
+VERSION = "v1.0.1"
 DESCRIPTION = f"域名批量检查工具 {VERSION}"
 
 CLI_HELP_MESSAGE = "显示此帮助信息并退出程序"
