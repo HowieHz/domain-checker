@@ -1,17 +1,13 @@
-from concurrent.futures import ThreadPoolExecutor
-import multiprocessing
-from typing import Any, Coroutine, Optional
-from functools import partial
-import tldextract
-import asyncio
-import aiofiles
 import argparse
+import asyncio
+import multiprocessing
 import os
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Coroutine, Optional
 
-from utils.tools import is_expired
-from utils.query_expired_date import query_expired_date
-from utils.types import Ok, Err
-from utils.logger import info
+import aiofiles
+import tldextract
+
 from utils.constant import (
     CLI_HELP_ERROR,
     CLI_HELP_INPUT,
@@ -30,6 +26,10 @@ from utils.constant import (
     INFO_NOT_FOUND_DATE,
     INFO_NOT_REGISTER,
 )
+from utils.defined_types import Err, Ok, Result
+from utils.logger import info
+from utils.query_expired_date import query_expired_date
+from utils.tools import is_expired
 
 
 async def process_domain(
@@ -37,7 +37,7 @@ async def process_domain(
     thread_pool_executor: ThreadPoolExecutor,
     output_file: Optional[str] = None,
     error_file: Optional[str] = None,
-) -> Coroutine[Any, Any, None]:
+) -> None:
     future = asyncio.shield(
         asyncio.create_task(query_expired_date(domain, thread_pool_executor))
     )
@@ -65,22 +65,20 @@ async def process_domain(
                         await f.write(domain + "\n")
             else:
                 info(
-                    (INFO_INTERNET_ERROR + " " + error.removeprefix("Internat Error ")).format(
-                        domain=domain
-                    )
+                    (
+                        INFO_INTERNET_ERROR + " " + error.removeprefix("Internat Error ")
+                    ).format(domain=domain)
                 )
                 # 解析失败的写入 error.txt 文件
                 if error_file is not None:
                     async with aiofiles.open(error_file, "a") as f:
                         await f.write(domain + "\n")
             return
-        case Ok(value):
-            expired_date = value
+        case Ok(expired_date):
+            pass
 
-    is_expired_result = is_expired(expired_date)
+    is_expired_result: Result[bool, Exception] = is_expired(expired_date)
     match is_expired_result:
-        case Ok(value):
-            is_expired_bool = value
         case Err(_error):
             info(INFO_ERROR_PARSING_DATE.format(domain=domain))
             # 解析失败的写入 error.txt 文件
@@ -88,6 +86,8 @@ async def process_domain(
                 async with aiofiles.open(error_file, "a") as f:
                     await f.write(domain + "\n")
             return
+        case Ok(is_expired_bool):
+            pass
 
     if is_expired_bool:
         info(INFO_EXPIRED.format(domain=domain))
@@ -187,7 +187,7 @@ async def process_file_part(
     error_file: Optional[str],
     thread_pool_executor=ThreadPoolExecutor,
 ):
-    l: asyncio.Task = []
+    l: list[Coroutine[Any, Any, None]] = []
 
     # 读取文件中的域名，一行一个域名，节约内存的读法
     async with aiofiles.open(file_part, "r") as f:
@@ -251,9 +251,7 @@ def main(
     max_num_threads_per_process: Optional[int],
 ):
     if num_processes == 1:
-        thread_pool_executor = ThreadPoolExecutor(
-            max_workers=max_num_threads_per_process
-        )
+        thread_pool_executor = ThreadPoolExecutor(max_workers=max_num_threads_per_process)
         asyncio.run(
             process_file_part(input_file, output_file, error_file, thread_pool_executor)
         )
@@ -263,9 +261,7 @@ def main(
 
     processes = []
     for file_part in file_parts:
-        thread_pool_executor = ThreadPoolExecutor(
-            max_workers=max_num_threads_per_process
-        )
+        thread_pool_executor = ThreadPoolExecutor(max_workers=max_num_threads_per_process)
         p = multiprocessing.Process(
             target=worker,
             args=(file_part, output_file, error_file, thread_pool_executor),

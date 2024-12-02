@@ -1,4 +1,6 @@
 requests~=2.31.0
-whois21~=1.4.2
+whois21~=1.4.5
 tldextract~=5.1.3
 aiofiles~=24.1.0
+pre-commit
+mypy

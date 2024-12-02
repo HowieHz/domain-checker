@@ -1,0 +1,32 @@
+[project]
+name = "domain-checker"
+version = "v1.0.0"
+requires-python = ">= 3.12"
+description = "Domain Expiration Checker"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["whois", "domain", "whois-lookup", "domain-checker"]
+
+[tool.black]
+line-length = 90
+
+[tool.isort]
+profile = "black"
+src_paths = ["src"]
+multi_line_output = 3
+verbose = true
+line_length = 90
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+files = "**/*.py"
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "aiofiles",
+    "whois21",
+]
+ignore_missing_imports = true

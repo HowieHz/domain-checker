@@ -4,7 +4,7 @@ from typing import Any, Coroutine
 
 from whois21 import WHOIS
 
-from .types import Ok, Err, Result
+from .defined_types import Err, Ok, Result
 
 
 def query_whois(domain):
@@ -13,7 +13,7 @@ def query_whois(domain):
 
 async def whois_query(
     domain: str, thread_pool_executor: ThreadPoolExecutor
-) -> Coroutine[Any, Any, Result[dict, dict]]:
+) -> Result[dict, dict]:
     """通过 whois 查询域名信息
 
     Args:
@@ -60,7 +60,7 @@ async def whois_query(
 
 async def query_expired_date(
     domain: str, thread_pool_executor: ThreadPoolExecutor
-) -> Coroutine[Any, Any, Result[str, str]]:
+) -> Result[str, str]:
     """通过 whois 查询域名过期时间
 
     Args:

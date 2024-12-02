@@ -48,6 +48,12 @@ deactivate
 pip install -r requirements.txt
 ```
 
+创建 pre-commit 钩子，以便在每次提交前自动格式化代码
+
+```bash
+pre-commit install
+```
+
 <!-- 附：导出当前虚拟环境中的库
 
 ```bash

@@ -1,6 +1,7 @@
 import datetime
 
-from ..types import Ok, Err, Result
+from ..defined_types import Err, Ok, Result
+
 
 def is_expired(orginal_time: str) -> Result[bool, Exception]:
     """检查域名是否过期
@@ -16,7 +17,7 @@ def is_expired(orginal_time: str) -> Result[bool, Exception]:
             orginal_time_format = "%Y-%m-%dT%H:%M:%SZ"
         elif len(orginal_time) == 19:
             orginal_time_format = "%Y-%m-%d %H:%M:%S"
-        else: 
+        else:
             orginal_time_format = "%Y-%m-%dT%H:%M:%S.%fZ"
         domain_expiration_timestamp = datetime.datetime.strptime(
             orginal_time, orginal_time_format
