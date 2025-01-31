@@ -1,17 +1,16 @@
-import os, pprint
+import os
+import pprint
 from typing import Any
 
-
-DEBUG_FLAG: bool = bool(
-    os.getenv("DEBUG_FLAG")
-)  # 有文字都会转换成 true
+DEBUG_FLAG: bool = bool(os.getenv("DEBUG_FLAG"))  # 有文字都会转换成 true
 
 if DEBUG_FLAG:
     log_stream = open("debug.log", mode="a+", encoding="utf-8")
 
+
 def info(*message: str) -> None:
     quiet_flag: bool = bool(os.getenv("QUIET_FLAG"))
-    
+
     if quiet_flag:
         return
 

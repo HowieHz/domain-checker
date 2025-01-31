@@ -1,6 +1,6 @@
 [project]
 name = "domain-checker"
-version = "v1.0.1"
+version = "v2.0.0"
 requires-python = ">= 3.12"
 description = "Domain Expiration Checker"
 readme = "README.md"
@@ -30,3 +30,9 @@ module = [
     "whois21",
 ]
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-q -v -s"
+python_files = ["test_*.py", "*_test.py"]
+testpaths = ["tests"]

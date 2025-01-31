@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12' 
+          python-version: '3.12'
       - name: Donwload required lib
         run: |
           pip install -r requirements.txt
@@ -25,7 +25,7 @@ jobs:
           python extra-scripts/travellings-cn-api/main.py
       - name: Run Script To Check Domain Expiration
         run: |
-          python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt -p 1 --unlock-threads-limit
+          python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt
       - name: Check and Retry Error Status Domain
         run: |
           max_retries=2
@@ -35,7 +35,7 @@ jobs:
             sleep 60
             echo "Retrying $retries+1 of $max_retries"
             mv ~/builds/target/error.txt ~/builds/temp/error.txt
-            python src/main.py -i ~/builds/temp/error.txt -o ~/builds/target/output.txt -e ~/builds/target/error.txt -p 1 --unlock-threads-limit
+            python src/main.py -i ~/builds/temp/error.txt -o ~/builds/target/output.txt -e ~/builds/target/error.txt
             rm ~/builds/temp/error.txt
             retries=$((retries + 1))
           done
