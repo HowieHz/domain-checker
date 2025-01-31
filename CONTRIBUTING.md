@@ -48,6 +48,10 @@ deactivate
 pip install -r requirements.txt
 ```
 
+```bash
+pip install -r requirements-dev.txt
+```
+
 创建 pre-commit 钩子，以便在每次提交前自动格式化代码
 
 ```bash
@@ -115,3 +119,7 @@ pip install nuitka
 chmod +x ./build-scripts/build_with_nuitka.sh
 ./build-scripts/build_with_nuitka.sh
 ```
+
+## 软件架构
+
+`plugin_manager` 加载插件

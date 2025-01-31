@@ -1,0 +1,1 @@
+from .__call_plugin_method import call_plugin_by_id

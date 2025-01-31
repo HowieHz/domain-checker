@@ -1,1 +1,1 @@
-from .logger import debug, info
+from ._logger import debug, info

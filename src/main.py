@@ -1,246 +1,199 @@
-import argparse
 import asyncio
+import concurrent
+import datetime
 import multiprocessing
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Coroutine, Optional
+from typing import Any, Coroutine, Literal, Optional
 
 import aiofiles
 import tldextract
+from tqdm.asyncio import tqdm_asyncio
 
-from utils.constant import (
-    CLI_HELP_ERROR,
-    CLI_HELP_INPUT,
-    CLI_HELP_MESSAGE,
-    CLI_HELP_NUM_PROCESSES,
-    CLI_HELP_NUM_THREADS,
-    CLI_HELP_OUTPUT,
-    CLI_HELP_QUIET,
-    CLI_HELP_UNLOCK_THREADS_LIMIT,
-    DESCRIPTION,
-    INFO_API_LIMIT,
+from commands import args_parser
+from plugin_manager import PluginManager
+from utils.date_utils import is_datetime_expired
+from utils.defined_types import Err, Ok, ParsedWhoisData, Result, RunArgs
+from utils.defined_types.datetime_parser_result import DatetimeParserErrResult
+from utils.defined_types.domain_query_result import ExceptionErrResult, MsgErrResult
+from utils.file_utils import split_file
+from utils.logger import debug, info
+from utils.text import (
+    INFO_API_ERROR,
+    INFO_CHECKING_DATE_EXPIRED,
     INFO_ERROR_PARSING_DATE,
     INFO_EXPIRED,
-    INFO_INTERNET_ERROR,
     INFO_NOT_EXPIRED,
-    INFO_NOT_FOUND_DATE,
     INFO_NOT_REGISTER,
+    INFO_REDEMPTION_PERIOD,
 )
-from utils.defined_types import Err, Ok, Result
-from utils.logger import info
-from utils.query_expired_date import query_expired_date
-from utils.tools import is_expired
+from whois_query_tool import call_plugin_by_id
 
 
-async def process_domain(
-    domain: str,
-    thread_pool_executor: ThreadPoolExecutor,
-    output_file: Optional[str] = None,
-    error_file: Optional[str] = None,
-) -> None:
-    future = asyncio.shield(
-        asyncio.create_task(query_expired_date(domain, thread_pool_executor))
-    )
-    query_expired_date_result = await future
-
-    match query_expired_date_result:
-        case Err(error):
-            if error == "Not Register":
-                info(INFO_NOT_REGISTER.format(domain=domain))
-                # 未注册算过期，写入 output.txt 文件
-                if output_file is not None:
-                    async with aiofiles.open(output_file, "a") as f:
-                        await f.write(domain + "\n")
-            elif error == "Not Found Date":
-                info(INFO_NOT_FOUND_DATE.format(domain=domain))
-                # 未找到的写入 error.txt 文件
-                if error_file is not None:
-                    async with aiofiles.open(error_file, "a") as f:
-                        await f.write(domain + "\n")
-            elif error == "API Limit":
-                info(INFO_API_LIMIT.format(domain=domain))
-                # API 限制的写入 error.txt 文件
-                if error_file is not None:
-                    async with aiofiles.open(error_file, "a") as f:
-                        await f.write(domain + "\n")
-            else:
-                info(
-                    (
-                        INFO_INTERNET_ERROR + " " + error.removeprefix("Internat Error ")
-                    ).format(domain=domain)
-                )
-                # 解析失败的写入 error.txt 文件
-                if error_file is not None:
-                    async with aiofiles.open(error_file, "a") as f:
-                        await f.write(domain + "\n")
-            return
-        case Ok(expired_date):
-            pass
-
-    is_expired_result: Result[bool, Exception] = is_expired(expired_date)
-    match is_expired_result:
-        case Err(_error):
-            info(INFO_ERROR_PARSING_DATE.format(domain=domain))
-            # 解析失败的写入 error.txt 文件
-            if error_file is not None:
-                async with aiofiles.open(error_file, "a") as f:
-                    await f.write(domain + "\n")
-            return
-        case Ok(is_expired_bool):
-            pass
-
-    if is_expired_bool:
-        info(INFO_EXPIRED.format(domain=domain))
-        # 已过期的写入 output.txt 文件
-        if output_file is not None:
-            async with aiofiles.open(output_file, "a") as f:
-                await f.write(domain + "\n")
-    else:
-        info(INFO_NOT_EXPIRED.format(domain=domain))
-
-
-def create_parser() -> argparse.ArgumentParser:
-    prefix_chars: str = "-"
-    parser = argparse.ArgumentParser(
-        description=DESCRIPTION, add_help=False, prefix_chars=prefix_chars
-    )
-
-    default_prefix = "-" if "-" in prefix_chars else prefix_chars[0]
-    parser.add_argument(
-        default_prefix + "h",
-        default_prefix * 2 + "help",
-        action="help",
-        default="==SUPPRESS==",
-        help=CLI_HELP_MESSAGE,
-    )
-
-    parser.add_argument("-i", "--input", help=CLI_HELP_INPUT, type=str)
-    parser.add_argument("-o", "--output", help=CLI_HELP_OUTPUT, type=str)
-    parser.add_argument("-e", "--error", help=CLI_HELP_ERROR, type=str)
-    parser.add_argument(
-        "-p",
-        "--num-processes",
-        help=CLI_HELP_NUM_PROCESSES,
-        type=int,
-        default=1,
-    )
-    parser.add_argument(
-        "-t",
-        "--max-num-threads-per-process",
-        help=CLI_HELP_NUM_THREADS,
-        type=int,
-        default=80,
-    )
-    parser.add_argument(
-        "-utl",
-        "--unlock-threads-limit",
-        help=CLI_HELP_UNLOCK_THREADS_LIMIT,
-        type=str,
-        nargs="?",
-        const="True",  # 参数仅添加 -q 后没更参数
-        metavar="True",
-    )
-    parser.add_argument(
-        "-q",
-        "--quiet",
-        help=CLI_HELP_QUIET,
-        type=str,
-        nargs="?",
-        const="True",  # 参数仅添加 -q 后没更参数
-        metavar="True",
-    )
-    return parser
-
-
-def arg_parse():
-    parser = create_parser()
-    args = parser.parse_args()
-
-    if args.quiet is not None:
-        os.environ["QUIET_FLAG"] = "True"
-
-    if args.unlock_threads_limit is not None:
-        max_num_threads_per_process = None
-    else:
-        max_num_threads_per_process = args.max_num_threads_per_process
-
-    if args.input is None:
-        input_file = "input.txt"
-    else:
-        input_file = args.input
-
-    # asyncio.run(
-
-    # )
-    main(
-        input_file=input_file,
-        output_file=args.output,
-        error_file=args.error,
-        num_processes=args.num_processes,
-        max_num_threads_per_process=max_num_threads_per_process,
-    )
-
-
-async def process_file_part(
+async def main_async(
     file_part: str,
     output_file: Optional[str],
     error_file: Optional[str],
     thread_pool_executor=ThreadPoolExecutor,
 ):
-    l: list[Coroutine[Any, Any, None]] = []
+    """主协程函数
 
-    # 读取文件中的域名，一行一个域名，节约内存的读法
-    async with aiofiles.open(file_part, "r") as f:
+    Args:
+        file_part (str): 要处理的文件
+        output_file (Optional[str]): 输出文件的路径
+        error_file (Optional[str]): 错误日志文件的路径
+        thread_pool_executor (_type_, optional): 线程池实例
+    """
+    tasks: list[concurrent.futures.Future] = []
+
+    id: str = "whois21"
+
+    loop = asyncio.get_running_loop()
+
+    # 读取文件中的域名，一行一个域名。使用节约内存的读法
+    async with aiofiles.open(file_part, "r", encoding="utf-8") as f:
         async for line in f:
+            # 提取出域名
             extracted_domain = tldextract.extract(line.strip())
-            domain = extracted_domain.domain + "." + extracted_domain.suffix
-            l.append(
-                process_domain(
-                    domain=domain,
-                    output_file=output_file,
-                    error_file=error_file,
-                    thread_pool_executor=thread_pool_executor,
-                )
+            _domain = extracted_domain.domain + "." + extracted_domain.suffix
+
+            # 创建 task
+            task: concurrent.futures.Future = loop.run_in_executor(
+                thread_pool_executor, call_plugin_by_id, id, _domain
             )
 
-    # 等待所有任务完成
-    await asyncio.gather(*l)
+            # 加入 task 列表
+            tasks.append(task)
 
+    # 等待任务完成
+    for future in tqdm_asyncio.as_completed(tasks, desc="", total=len(tasks)):
+        query_result: Result[ParsedWhoisData, MsgErrResult | ExceptionErrResult] = (
+            await future
+        )
+        result_domain: str
+        match query_result:
+            case Err(error):
+                result_domain = error["domain"]
+                if "msg" in error:
+                    info(
+                        f"{INFO_API_ERROR}  HTTP-Status-Code:{error['code']}  Info:{error['msg']}".format(
+                            domain=result_domain
+                        )
+                    )
+                elif "err" in error:
+                    info(
+                        f"{INFO_API_ERROR} {str(error['err'])}".format(
+                            domain=result_domain
+                        )
+                    )
 
-def split_file(input_file: str, num_parts: int) -> list:
-    # 创建 temp 目录（如果不存在）
-    os.makedirs("./temp", exist_ok=True)
+                # 获取失败的写入 error.txt 文件
+                if error_file is not None:
+                    async with aiofiles.open(error_file, "a", encoding="utf-8") as f:
+                        await f.write(result_domain + "\n")
+                continue
+            case Ok(parsed_whois_data):
+                result_domain = parsed_whois_data["domain"]
+            case _:
+                raise Exception
 
-    with open(input_file, "r", encoding="utf-8") as f:
-        lines = f.readlines()
+        domain_status: tuple[
+            bool, Literal["registered", "redemption", "unregistered"]
+        ] = parsed_whois_data["status"]
 
-    total_lines = len(lines)
-    part_size = total_lines // num_parts
-    remainder = total_lines % num_parts
-    file_parts = []
+        # debug 信息用于检查非注册状态域名的 hwhois
+        if domain_status[1] != "registered":
+            debug(message="parsed whois data", data=parsed_whois_data)
 
-    start = 0
-    for i in range(num_parts):
-        end = start + part_size + (1 if i < remainder else 0)
-        part_lines = lines[start:end]
-        part_file = f"./temp/temp_part_{i}.txt"
-        with open(part_file, "w", encoding="utf-8") as part_f:
-            part_f.writelines(part_lines)
-        file_parts.append(part_file)
-        start = end
+        if domain_status[1] == "unregistered":
+            info(INFO_NOT_REGISTER.format(domain=result_domain))
+            # 未注册，写入 output.txt 文件
+            if output_file is not None:
+                async with aiofiles.open(output_file, "a", encoding="utf-8") as f:
+                    await f.write(result_domain + "\n")
+            continue
+        elif domain_status[1] == "redemption":
+            info(INFO_REDEMPTION_PERIOD.format(domain=result_domain))
+            # 赎回期，写入 output.txt 文件
+            if output_file is not None:
+                async with aiofiles.open(output_file, "a", encoding="utf-8") as f:
+                    await f.write(result_domain + "\n")
+            continue
 
-    return file_parts
+        # 为了保险，再检查下时间是否是过期的。
+        # 检查“是否为赎回期”可能有缺漏，但是可以明确的是赎回期的特征：有域名过期时间但是时间过期了
+
+        # 查询时间
+        match parsed_whois_data["registry_expiry_date"]:
+            case Err(error):
+                error: DatetimeParserErrResult
+
+                # 时间解析失败
+
+                if error["msg"] != "Error Parsing Date":
+                    raise ValueError
+
+                info(
+                    f"{INFO_ERROR_PARSING_DATE} err:{error['err']} raw:{error['raw']}".format(
+                        domain=result_domain
+                    )
+                )
+                # 解析失败的写入 error.txt 文件
+                if error_file is not None:
+                    async with aiofiles.open(error_file, "a", encoding="utf-8") as f:
+                        await f.write(result_domain + "\n")
+                continue
+            case Ok(expired_date):
+                expired_date: datetime.datetime
+            case _:
+                exit(-1)
+
+        # 计算查到的时间是否过期
+        is_expired_result: Result[bool, Exception] = is_datetime_expired(expired_date)
+        match is_expired_result:
+            case Err(e):
+                # 在检查时间是否过期的时候出现错误
+                info(f"{INFO_CHECKING_DATE_EXPIRED} {e}".format(domain=result_domain))
+                # 解析失败的写入 error.txt 文件
+                if error_file is not None:
+                    async with aiofiles.open(error_file, "a", encoding="utf-8") as f:
+                        await f.write(result_domain + "\n")
+                continue
+            case Ok(is_expired):
+                is_expired: bool
+
+        # 判断是否过期
+        if is_expired:
+            info(INFO_EXPIRED.format(domain=result_domain))
+            # 已过期的写入 output.txt 文件
+            if output_file is not None:
+                async with aiofiles.open(output_file, "a", encoding="utf-8") as f:
+                    await f.write(result_domain + "\n")
+            continue
+
+        # 输出未过期的
+        info(INFO_NOT_EXPIRED.format(domain=result_domain))
 
 
 def worker(
     file_part: str,
     output_file: Optional[str],
     error_file: Optional[str],
-    thread_pool_executor: ThreadPoolExecutor,
+    max_num_threads_per_process: Optional[int],
 ):
-    asyncio.run(
-        process_file_part(file_part, output_file, error_file, thread_pool_executor)
-    )
+    """一个 worker 对应一个进程，用于启动协程任务
+
+    Args:
+        file_part (str): 要处理的文件
+        output_file (Optional[str]): 输出文件的路径
+        error_file (Optional[str]): 错误日志文件的路径
+        max_num_threads_per_process (Optional[int]): 最大线程数
+    """
+    with ThreadPoolExecutor(
+        max_workers=max_num_threads_per_process
+    ) as thread_pool_executor:
+        asyncio.run(main_async(file_part, output_file, error_file, thread_pool_executor))
 
 
 def main(
@@ -250,25 +203,47 @@ def main(
     num_processes: int,
     max_num_threads_per_process: Optional[int],
 ):
+    """主函数，用于处理输入文件并将结果输出到指定文件
+
+    Args:
+        input_file (str): 输入文件的路径
+        output_file (Optional[str]): 输出文件的路径。如果为 None，则不输出结果文件
+        error_file (Optional[str]): 错误日志文件的路径。如果为 None，则不输出错误日志文件
+        num_processes (int): 进程数量。如果为 1，则使用单进程模式；否则使用多进程模式
+        max_num_threads_per_process (Optional[int]): 每个进程的最大线程数。如果为 None，则使用默认线程数，在 Python 3.13 环境下，默认线程数为 min(32, (os.process_cpu_count() or 1) + 4)
+    Raises:
+        ValueError("Number of processes must be at least 1"): 进程数至少应该为 1
+        ValueError("Max number of threads per process must be at least 1"): 线程数至少应该为 1
+    """
+    # 检查参数是否合法
+    if num_processes < 1:
+        raise ValueError("Number of processes must be at least 1")
+    if max_num_threads_per_process is not None and max_num_threads_per_process < 1:
+        raise ValueError("Max number of threads per process must be at least 1")
+
+    # 进程数为 1，不分割文件
     if num_processes == 1:
-        thread_pool_executor = ThreadPoolExecutor(max_workers=max_num_threads_per_process)
-        asyncio.run(
-            process_file_part(input_file, output_file, error_file, thread_pool_executor)
-        )
+        worker(input_file, output_file, error_file, max_num_threads_per_process)
         return
 
+    # 进程数 > 1 分割文件
     file_parts = split_file(input_file, num_processes)
 
+    # 创建进程
     processes = []
     for file_part in file_parts:
-        thread_pool_executor = ThreadPoolExecutor(max_workers=max_num_threads_per_process)
-        p = multiprocessing.Process(
-            target=worker,
-            args=(file_part, output_file, error_file, thread_pool_executor),
+        processes.append(
+            multiprocessing.Process(
+                target=worker,
+                args=(file_part, output_file, error_file, max_num_threads_per_process),
+            )
         )
-        processes.append(p)
+
+    # 启动进程
+    for p in processes:
         p.start()
 
+    # 等待进程结束
     for p in processes:
         p.join()
 
@@ -278,4 +253,18 @@ def main(
 
 
 if __name__ == "__main__":
-    arg_parse()
+    run_args: RunArgs = args_parser()
+
+    # 加载插件
+    PluginManager().load_plugin(plugin_dir_path="plugins")
+
+    start_time: float = time.time()
+    main(
+        input_file=run_args.input_file,
+        output_file=run_args.output_file,
+        error_file=run_args.error_file,
+        num_processes=run_args.num_processes,
+        max_num_threads_per_process=run_args.max_num_threads_per_process,
+    )
+    end_time: float = time.time()
+    info(f"Total time taken: {end_time - start_time:.3f} seconds")
