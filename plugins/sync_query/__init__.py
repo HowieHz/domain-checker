@@ -1,10 +1,8 @@
 import socket
 
-from src.utils.defined_types import PluginMetadataDict, PluginReturnDict
-
 from .whois_server_list import whois_server_dict
 
-METADATA: PluginMetadataDict = {
+METADATA = {
     "id": "sync_query",
     "mode": "sync",
     "author": "HowieHz",
@@ -12,7 +10,7 @@ METADATA: PluginMetadataDict = {
 }
 
 
-def main(domain: str) -> PluginReturnDict:
+def main(domain: str):
     try:
         root_server = whois_server_dict[get_domain_tld(domain)]
         raw_whois = whois_request(domain, root_server)

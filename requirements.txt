@@ -4,3 +4,4 @@ aiofiles~=24.1.0
 python-dateutil~=2.9.0
 whois21~=1.4.5
 tqdm~=4.67.1
+nuitka~=2.6.2

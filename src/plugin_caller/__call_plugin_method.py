@@ -1,6 +1,6 @@
+from defined_types import Err, Ok, ParsedWhoisData, PluginReturnDict, Result
+from defined_types.domain_query_result import ExceptionErrResult, MsgErrResult
 from plugin_manager import PluginManager
-from utils.defined_types import Err, Ok, ParsedWhoisData, PluginReturnDict, Result
-from utils.defined_types.domain_query_result import ExceptionErrResult, MsgErrResult
 from utils.whois_parser import whois_parser
 
 

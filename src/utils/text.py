@@ -25,3 +25,10 @@ INFO_NOT_EXPIRED = "✅ {domain}  🆗 Not Expired"
 INFO_API_INTERNET_ERROR = "⚠️ {domain}  🛜 API Internet Error"
 INFO_API_LIMIT = "⚠️ {domain}  🚫 API Limit"
 INFO_API_ERROR = "⚠️ {domain}  🚫 API Error"
+
+PLUGIN_DIR_LOAD_ERROR = (
+    "文件夹型插件 {plugin_dir_name} 加载出现错误，请联系对应插件作者修复这个问题"
+)
+PLUGIN_FILE_LOAD_ERROR = (
+    "单文件型插件 {plugin_file_name}.py 加载出现错误，请联系对应插件作者修复这个问题"
+)

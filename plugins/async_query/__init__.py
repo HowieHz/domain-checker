@@ -1,10 +1,8 @@
 import asyncio
 
-from src.utils.defined_types import PluginMetadataDict, PluginReturnDict
-
 from .whois_server_list import whois_server_dict
 
-METADATA: PluginMetadataDict = {
+METADATA = {
     "id": "async_query",
     "mode": "async",
     "author": "HowieHz",
@@ -12,7 +10,7 @@ METADATA: PluginMetadataDict = {
 }
 
 
-async def main(domain: str) -> PluginReturnDict:
+async def main(domain: str):
     try:
         root_server = whois_server_dict[get_domain_tld(domain)]
         raw_whois = await whois_request(domain, root_server)

@@ -11,13 +11,11 @@ import tldextract
 from tqdm.asyncio import tqdm_asyncio
 
 from commands import args_parser
+from defined_types import Err, Ok, ParsedWhoisData, PluginMetadataDict, Result, RunArgs
+from defined_types.domain_query_result import ExceptionErrResult, MsgErrResult
 from plugin_caller import call_async_plugin_by_id, call_sync_plugin_by_id
 from plugin_manager import PluginManager
 from utils.date_utils import is_datetime_expired
-from utils.defined_types import Err, Ok, ParsedWhoisData, Result, RunArgs
-from utils.defined_types._plugin_data_structure import PluginMetadataDict
-from utils.defined_types.datetime_parser_result import DatetimeParserErrResult
-from utils.defined_types.domain_query_result import ExceptionErrResult, MsgErrResult
 from utils.file_utils import split_file
 from utils.logger import debug, info
 from utils.text import (
@@ -252,7 +250,8 @@ def main(
         ValueError("Max number of threads per process must be at least 1"): 线程数至少应该为 1
     """
     if len(PluginManager().get_all_plugin_ids()) == 0:
-        ValueError(CLI_ERROR_NO_AVAILABLE_PLUGIN)
+        raise ValueError(CLI_ERROR_NO_AVAILABLE_PLUGIN)
+
     if plugin_id is None:
         # 未指定插件 id
         plugin_id = "async_query"

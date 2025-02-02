@@ -2,8 +2,8 @@ import argparse
 import os
 from typing import Optional
 
+from defined_types import RunArgs
 from plugin_manager._plugin_manger import PluginManager
-from utils.defined_types import RunArgs
 from utils.text import (
     CLI_HELP_ERROR,
     CLI_HELP_INPUT,

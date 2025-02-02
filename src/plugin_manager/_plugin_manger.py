@@ -5,7 +5,8 @@ import traceback
 from types import ModuleType
 from typing import Any, Generator
 
-from utils.defined_types import PluginMetadataDict
+from defined_types import PluginMetadataDict
+from utils.text import PLUGIN_DIR_LOAD_ERROR, PLUGIN_FILE_LOAD_ERROR
 
 # 为了导入上层包
 sys.path.append(os.path.join(sys.path[0], ".."))
@@ -84,10 +85,14 @@ class PluginManager(metaclass=SingletonMeta):
         # 读取文件文件夹
         plugin_dir = Path(plugin_dir_path)
 
+        # 无则创建
+        plugin_dir.mkdir(exist_ok=True)
+
         plugin_instance: ModuleType
 
         # 加载单文件型插件
         for name in _get_single_file_plugins(plugin_dir, plugin_file_suffix):
+            # 此处 name 是插件文件去除 .py 的文件名
             try:
                 plugin_instance = importlib.import_module(f"{plugin_dir.name}.{name}")
                 counter = 2
@@ -96,11 +101,13 @@ class PluginManager(metaclass=SingletonMeta):
                     counter += 1
                 loaded_plugin_list.append(plugin_instance)
             except Exception as _:
+                print(PLUGIN_FILE_LOAD_ERROR.format(plugin_file_name=name))
                 traceback.print_exc()
                 continue
 
         # 加载文件夹型插件
         for name in _get_directory_plugins(plugin_dir):
+            # 此处 name 是插件的文件夹名
             try:
                 plugin_instance = importlib.import_module(
                     f".{name}.__init__", package=plugin_dir.name
@@ -111,6 +118,7 @@ class PluginManager(metaclass=SingletonMeta):
                     counter += 1
                 loaded_plugin_list.append(plugin_instance)
             except Exception as _:
+                print(PLUGIN_DIR_LOAD_ERROR.format(plugin_dir_name=name))
                 traceback.print_exc()
                 continue
 

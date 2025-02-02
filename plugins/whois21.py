@@ -1,8 +1,6 @@
 from whois21 import WHOIS
 
-from src.utils.defined_types import PluginMetadataDict, PluginReturnDict
-
-METADATA: PluginMetadataDict = {
+METADATA = {
     "id": "whois21",
     "mode": "sync",
     "author": "HowieHz",
@@ -10,7 +8,7 @@ METADATA: PluginMetadataDict = {
 }
 
 
-def main(domain: str) -> PluginReturnDict:
+def main(domain: str):
     # 返回值 200 还非空，就会进入检查
     # 返回值 200 但是 raw 为空，会设置为 Empty query result
     # 返回值非 200 不论 raw 是什么都会按照 API Error 输出

@@ -2,8 +2,8 @@ import datetime
 
 import pytest
 
+from src.defined_types import Err, Ok
 from src.utils.date_utils import datetime_string_parser
-from src.utils.defined_types import Err, Ok
 
 
 # 有效的日期字符串测试
