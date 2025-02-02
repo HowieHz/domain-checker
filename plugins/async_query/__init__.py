@@ -20,6 +20,8 @@ async def main(domain: str) -> PluginReturnDict:
             return {"code": 503, "raw": raw_whois[1]}
         if "Your access is too fast,please try again later." in raw_whois[1]:
             return {"code": 503, "raw": raw_whois[1]}
+        if "Queried interval is too short." in raw_whois[1]:
+            return {"code": 503, "raw": raw_whois[1]}
         return {"code": 200, "raw": raw_whois[1]}
     except Exception as e:
         return {"code": 500, "raw": str(e)}

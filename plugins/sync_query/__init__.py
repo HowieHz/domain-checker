@@ -25,6 +25,8 @@ def main(domain: str) -> PluginReturnDict:
         # Your access is too fast,please try again later.\r\n
         if "Your access is too fast,please try again later." in raw_whois[1]:
             return {"code": 503, "raw": raw_whois[1]}
+        if "Queried interval is too short." in raw_whois[1]:
+            return {"code": 503, "raw": raw_whois[1]}
         return {"code": 200, "raw": raw_whois[1]}
     except Exception as e:
         return {"code": 500, "raw": e}
