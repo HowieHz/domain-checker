@@ -22,6 +22,8 @@ from utils.defined_types.domain_query_result import ExceptionErrResult, MsgErrRe
 from utils.file_utils import split_file
 from utils.logger import debug, info
 from utils.text import (
+    CLI_ERROR_INVAID_PLUGIN_ID,
+    CLI_ERROR_NO_AVAILABLE_PLUGIN,
     INFO_API_ERROR,
     INFO_CHECKING_DATE_EXPIRED,
     INFO_DATE_NOT_FOUND,
@@ -247,9 +249,7 @@ def main(
         ValueError("Max number of threads per process must be at least 1"): 线程数至少应该为 1
     """
     if len(PluginManager().get_all_plugin_ids()) == 0:
-        ValueError(
-            "无可用插件。请正确的在运行目录下放置 plugins 目录，并在其中放置插件文件"
-        )
+        ValueError(CLI_ERROR_NO_AVAILABLE_PLUGIN)
     if plugin_id is None:
         # 未指定插件 id
         plugin_id = "async_query"
@@ -312,6 +312,13 @@ if __name__ == "__main__":
 
     # 解析命令行
     run_args: RunArgs = args_parser()
+
+    # 确保指定的插件 id 是有效的
+    if (
+        run_args.plugin_id is not None
+        and run_args.plugin_id not in PluginManager().get_all_plugin_ids()
+    ):
+        raise ValueError(CLI_ERROR_INVAID_PLUGIN_ID)
 
     start_time: float = time.time()
     main(

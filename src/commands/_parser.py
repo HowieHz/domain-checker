@@ -5,7 +5,6 @@ from typing import Optional
 from plugin_manager._plugin_manger import PluginManager
 from utils.defined_types import RunArgs
 from utils.text import (
-    CLI_ERROR_INVAID_PLUGIN_ID,
     CLI_HELP_ERROR,
     CLI_HELP_INPUT,
     CLI_HELP_MESSAGE,
@@ -89,9 +88,6 @@ def args_parser() -> RunArgs:
     num_processes: int = 1 if args.num_processes is None else int(args.num_processes)
     max_num_threads_per_process: Optional[int] = args.max_num_threads_per_process
     plugin_id: Optional[str] = args.id
-    # 确保指定的插件 id 是有效的
-    if plugin_id is not None and plugin_id not in PluginManager().get_all_plugin_ids():
-        raise ValueError(CLI_ERROR_INVAID_PLUGIN_ID)
 
     # argparse 设置了 type，参数就会自动格式化为对应 type，但是这里还是特检一次
     for var, var_type in [
