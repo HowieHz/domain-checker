@@ -134,3 +134,11 @@ class PluginManager(metaclass=SingletonMeta):
             ModuleType: 插件对象
         """
         return self._loaded_plugin[id]
+
+    def get_all_plugin_ids(self) -> list[str]:
+        """获取全部加载的插件 id
+
+        Returns:
+            list[str]: 全部加载的插件 id 列表
+        """
+        return list(self._loaded_plugin.keys())

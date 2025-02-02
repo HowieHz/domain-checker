@@ -37,6 +37,7 @@ async def main_async(
     file_part: str,
     output_file: Optional[str],
     error_file: Optional[str],
+    plugin_id: str,
     thread_pool_executor=ThreadPoolExecutor,
 ):
     """主协程函数
@@ -48,8 +49,6 @@ async def main_async(
         thread_pool_executor (_type_, optional): 线程池实例
     """
     tasks: list[asyncio.Task | concurrent.futures.Future] = []
-
-    plugin_id: str = "async_query"
 
     loop = asyncio.get_running_loop()
 
@@ -203,6 +202,7 @@ def worker(
     output_file: Optional[str],
     error_file: Optional[str],
     max_num_threads_per_process: Optional[int],
+    plugin_id: str,
 ):
     """一个 worker 对应一个进程，用于启动协程任务
 
@@ -215,7 +215,15 @@ def worker(
     with ThreadPoolExecutor(
         max_workers=max_num_threads_per_process
     ) as thread_pool_executor:
-        asyncio.run(main_async(file_part, output_file, error_file, thread_pool_executor))
+        asyncio.run(
+            main_async(
+                file_part=file_part,
+                output_file=output_file,
+                error_file=error_file,
+                plugin_id=plugin_id,
+                thread_pool_executor=thread_pool_executor,
+            )
+        )
 
 
 def main(
@@ -224,6 +232,7 @@ def main(
     error_file: Optional[str],
     num_processes: int,
     max_num_threads_per_process: Optional[int],
+    plugin_id: Optional[str],
 ):
     """主函数，用于处理输入文件并将结果输出到指定文件
 
@@ -237,6 +246,17 @@ def main(
         ValueError("Number of processes must be at least 1"): 进程数至少应该为 1
         ValueError("Max number of threads per process must be at least 1"): 线程数至少应该为 1
     """
+    if len(PluginManager().get_all_plugin_ids()) == 0:
+        ValueError(
+            "无可用插件。请正确的在运行目录下放置 plugins 目录，并在其中放置插件文件"
+        )
+    if plugin_id is None:
+        # 未指定插件 id
+        plugin_id = "async_query"
+        # 如果 async_query 不可用，就选第一个加载的插件
+        if plugin_id not in PluginManager().get_all_plugin_ids():
+            plugin_id = PluginManager().get_all_plugin_ids()[0]
+
     # 检查参数是否合法
     if num_processes < 1:
         raise ValueError("Number of processes must be at least 1")
@@ -245,7 +265,13 @@ def main(
 
     # 进程数为 1，不分割文件
     if num_processes == 1:
-        worker(input_file, output_file, error_file, max_num_threads_per_process)
+        worker(
+            file_part=input_file,
+            output_file=output_file,
+            error_file=error_file,
+            max_num_threads_per_process=max_num_threads_per_process,
+            plugin_id=plugin_id,
+        )
         return
 
     # 进程数 > 1 分割文件
@@ -257,7 +283,13 @@ def main(
         processes.append(
             multiprocessing.Process(
                 target=worker,
-                args=(file_part, output_file, error_file, max_num_threads_per_process),
+                args=(
+                    file_part,
+                    output_file,
+                    error_file,
+                    max_num_threads_per_process,
+                    plugin_id,
+                ),
             )
         )
 
@@ -275,10 +307,11 @@ def main(
 
 
 if __name__ == "__main__":
-    run_args: RunArgs = args_parser()
-
     # 加载插件
     PluginManager().load_plugin(plugin_dir_path="plugins")
+
+    # 解析命令行
+    run_args: RunArgs = args_parser()
 
     start_time: float = time.time()
     main(
@@ -287,6 +320,7 @@ if __name__ == "__main__":
         error_file=run_args.error_file,
         num_processes=run_args.num_processes,
         max_num_threads_per_process=run_args.max_num_threads_per_process,
+        plugin_id=run_args.plugin_id,
     )
     end_time: float = time.time()
     info(f"Total time taken: {end_time - start_time:.3f} seconds")

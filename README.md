@@ -62,6 +62,7 @@ options:
                         指定每进程最大并发线程数。
   -q [True], --quiet [True]
                         使程序减少输出。--quiet 或 --quiet True 均可启用此选项
+  -id ID                指定插件 ID 来进行查询，可用 ID 有（下列 ID 用逗号分隔）：whois21,async_query,sync_query
 ```
 
 ## 使用示例

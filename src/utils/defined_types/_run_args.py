@@ -7,3 +7,4 @@ class RunArgs(NamedTuple):
     error_file: str
     num_processes: int
     max_num_threads_per_process: int
+    plugin_id: str

@@ -2,14 +2,17 @@ import argparse
 import os
 from typing import Optional
 
+from plugin_manager._plugin_manger import PluginManager
 from utils.defined_types import RunArgs
 from utils.text import (
+    CLI_ERROR_INVAID_PLUGIN_ID,
     CLI_HELP_ERROR,
     CLI_HELP_INPUT,
     CLI_HELP_MESSAGE,
     CLI_HELP_NUM_PROCESSES,
     CLI_HELP_NUM_THREADS,
     CLI_HELP_OUTPUT,
+    CLI_HELP_PLUGIN_ID,
     CLI_HELP_QUIET,
     DESCRIPTION,
 )
@@ -54,6 +57,13 @@ def _create_command_parser() -> argparse.ArgumentParser:
         const="True",  # 参数仅添加 -q 后没更参数
         metavar="True",
     )
+    parser.add_argument(
+        "-id",
+        help=CLI_HELP_PLUGIN_ID.format(
+            ids=",".join(PluginManager().get_all_plugin_ids())
+        ),
+        type=str,
+    )
     return parser
 
 
@@ -78,6 +88,10 @@ def args_parser() -> RunArgs:
     error_file: Optional[str] = args.error
     num_processes: int = 1 if args.num_processes is None else int(args.num_processes)
     max_num_threads_per_process: Optional[int] = args.max_num_threads_per_process
+    plugin_id: Optional[str] = args.id
+    # 确保指定的插件 id 是有效的
+    if plugin_id is not None and plugin_id not in PluginManager().get_all_plugin_ids():
+        raise ValueError(CLI_ERROR_INVAID_PLUGIN_ID)
 
     # argparse 设置了 type，参数就会自动格式化为对应 type，但是这里还是特检一次
     for var, var_type in [
@@ -86,6 +100,7 @@ def args_parser() -> RunArgs:
         (error_file, (str, type(None))),
         (num_processes, int),
         (max_num_threads_per_process, (int, type(None))),
+        (plugin_id, (str, type(None))),
     ]:
         if not isinstance(var, var_type):
             raise TypeError(f"{var} must be of type {var_type}")
@@ -96,4 +111,5 @@ def args_parser() -> RunArgs:
         error_file=error_file,
         num_processes=num_processes,
         max_num_threads_per_process=max_num_threads_per_process,
+        plugin_id=plugin_id,
     )
