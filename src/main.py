@@ -1,11 +1,10 @@
 import asyncio
-import concurrent
 import datetime
 import multiprocessing
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Coroutine, Literal, Optional
+from typing import Literal, Optional, cast
 
 import aiofiles
 import tldextract
@@ -50,7 +49,7 @@ async def main_async(
         error_file (Optional[str]): 错误日志文件的路径
         thread_pool_executor (_type_, optional): 线程池实例
     """
-    tasks: list[asyncio.Task | concurrent.futures.Future] = []
+    tasks: list[asyncio.Task | asyncio.Future] = []
 
     loop = asyncio.get_running_loop()
 
@@ -69,15 +68,18 @@ async def main_async(
             extracted = tldextract.extract(line.strip())
             target_domain = f"{extracted.domain}.{extracted.suffix}"
 
+            task: asyncio.Task | asyncio.Future
             # 根据同步或异步创建 Task
             if plugin_metadata_dict["mode"] == "async":
-                task: asyncio.Task = asyncio.create_task(
+                async_task: asyncio.Task = asyncio.create_task(
                     call_async_plugin_by_id(plugin_id, target_domain)
                 )
+                task = async_task
             else:
-                task: concurrent.futures.Future = loop.run_in_executor(
+                sync_task: asyncio.Future = loop.run_in_executor(
                     thread_pool_executor, call_sync_plugin_by_id, plugin_id, target_domain
                 )
+                task = sync_task
 
             # 加入 task 列表
             tasks.append(task)
@@ -91,18 +93,22 @@ async def main_async(
         match query_result:
             case Err(error):
                 result_domain = error["domain"]
-                if "msg" in error:
+                if "msg" in error and "code" in error:
+                    error = cast(MsgErrResult, error)
                     info(
                         f"{INFO_API_ERROR}  HTTP-Status-Code:{error['code']}  Info:{error['msg']}".format(
                             domain=result_domain
                         )
                     )
                 elif "err" in error:
+                    error = cast(ExceptionErrResult, error)
                     info(
                         f"{INFO_API_ERROR} {str(error['err'])}".format(
                             domain=result_domain
                         )
                     )
+                else:
+                    raise ValueError("Invaid Data")  # 不可能的路径
 
                 # 获取失败的写入 error.txt 文件
                 if error_file is not None:
@@ -142,20 +148,17 @@ async def main_async(
 
         # 查询时间
         match parsed_whois_data["registry_expiry_date"]:
-            case Err(error):
-                error: DatetimeParserErrResult
-
+            case Err(datetime_paser_error):
                 # 时间解析失败
-
-                if error["msg"] == "Error Parsing Date":
+                if datetime_paser_error["msg"] == "Error Parsing Date":
                     info(
-                        f"{INFO_ERROR_PARSING_DATE} err:{error['err']} raw:{error['raw']}".format(
+                        f"{INFO_ERROR_PARSING_DATE} err:{datetime_paser_error['err']} raw:{datetime_paser_error['raw']}".format(
                             domain=result_domain
                         )
                     )
-                elif error["msg"] == "Date not found":
+                elif datetime_paser_error["msg"] == "Date not found":
                     info(
-                        f"{INFO_DATE_NOT_FOUND} raw:{error['raw']}".format(
+                        f"{INFO_DATE_NOT_FOUND} raw:{datetime_paser_error['raw']}".format(
                             domain=result_domain
                         )
                     )
@@ -168,7 +171,7 @@ async def main_async(
                         await f.write(result_domain + "\n")
                 continue
             case Ok(expired_date):
-                expired_date: datetime.datetime
+                pass
             case _:
                 exit(-1)
 
@@ -184,7 +187,7 @@ async def main_async(
                         await f.write(result_domain + "\n")
                 continue
             case Ok(is_expired):
-                is_expired: bool
+                pass
 
         # 判断是否过期
         if is_expired:

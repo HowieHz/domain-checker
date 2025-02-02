@@ -91,14 +91,14 @@ def args_parser() -> RunArgs:
 
     # argparse 设置了 type，参数就会自动格式化为对应 type，但是这里还是特检一次
     for var, var_type in [
-        (input_file, str),
+        (input_file, (str,)),
         (output_file, (str, type(None))),
         (error_file, (str, type(None))),
-        (num_processes, int),
+        (num_processes, (int,)),
         (max_num_threads_per_process, (int, type(None))),
         (plugin_id, (str, type(None))),
     ]:
-        if not isinstance(var, var_type):
+        if type(var) not in var_type:
             raise TypeError(f"{var} must be of type {var_type}")
 
     return RunArgs(

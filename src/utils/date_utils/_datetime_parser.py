@@ -1,6 +1,6 @@
 import datetime
 
-import dateutil
+from dateutil import parser
 
 from ..defined_types import Err, Ok, Result
 from ..defined_types.datetime_parser_result import DatetimeParserErrResult
@@ -19,9 +19,7 @@ def datetime_string_parser(
         Result[datetime.datetime, DatetimeParserErrResult]: 表示解析后的日期和时间的 datetime 对象，时区为 utc
     """
     try:
-        parsed_datatime: datetime.datetime = dateutil.parser.parse(
-            original_datetime.strip()
-        )
+        parsed_datatime: datetime.datetime = parser.parse(original_datetime.strip())
 
         # 没有时区信息默认 utc
         if parsed_datatime.tzinfo is None:

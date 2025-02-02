@@ -84,12 +84,12 @@ class PluginManager(metaclass=SingletonMeta):
         # 读取文件文件夹
         plugin_dir = Path(plugin_dir_path)
 
+        plugin_instance: ModuleType
+
         # 加载单文件型插件
         for name in _get_single_file_plugins(plugin_dir, plugin_file_suffix):
             try:
-                plugin_instance: ModuleType = importlib.import_module(
-                    f"{plugin_dir.name}.{name}"
-                )
+                plugin_instance = importlib.import_module(f"{plugin_dir.name}.{name}")
                 counter = 2
                 while name in self._loaded_plugin:
                     name = f"{name}_{counter}"
@@ -102,7 +102,7 @@ class PluginManager(metaclass=SingletonMeta):
         # 加载文件夹型插件
         for name in _get_directory_plugins(plugin_dir):
             try:
-                plugin_instance: ModuleType = importlib.import_module(
+                plugin_instance = importlib.import_module(
                     f".{name}.__init__", package=plugin_dir.name
                 )
                 counter = 2

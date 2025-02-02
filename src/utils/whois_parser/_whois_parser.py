@@ -59,4 +59,6 @@ def _whois_registry_expiry_date_parser(
         ]:
             if prefix in line:
                 return datetime_string_parser(line.strip().removeprefix(prefix).strip())
-    return Err({"msg": "Date not found", "err": Exception, "raw": raw_whois})
+    return Err(
+        {"msg": "Date not found", "err": ValueError("Date not found"), "raw": raw_whois}
+    )

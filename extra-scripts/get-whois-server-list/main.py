@@ -45,15 +45,17 @@ async def main():
 
         print("✅ Got all TLD")
 
-        responses = await asyncio.gather(*tasks, return_exceptions=True)
+        responses: list[str | BaseException] = await asyncio.gather(
+            *tasks, return_exceptions=True
+        )
         for response, tld in zip(responses, tlds):
-            if isinstance(response, Exception):
+            if isinstance(response, BaseException):
                 print(f"{tld} ⚠️ Error fetching: {response}")
                 continue
 
             try:
-                retxt = re.compile(r"<b>WHOIS Server:</b> (.*?)\n")
-                arr = retxt.findall(response)
+                retxt: re.Pattern[str] = re.compile(r"<b>WHOIS Server:</b> (.*?)\n")
+                arr: list[str] = retxt.findall(response)
                 if arr:
                     if OUTPUT_PURE_ASCII and not tld.isascii():
                         tld = idna.encode(tld).decode("ascii")

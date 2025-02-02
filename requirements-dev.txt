@@ -4,3 +4,6 @@ black
 isort
 mypy
 pyinstaller
+nuitka
+types-tqdm
+types-python-dateutil
