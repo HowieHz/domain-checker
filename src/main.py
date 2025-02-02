@@ -30,7 +30,7 @@ from utils.text import (
     INFO_NOT_REGISTER,
     INFO_REDEMPTION_PERIOD,
 )
-from whois_query_tool import call_async_plugin_by_id, call_sync_plugin_by_id
+from plugin_caller import call_async_plugin_by_id, call_sync_plugin_by_id
 
 
 async def main_async(
