@@ -1,0 +1,49 @@
+name: Check travellings-cn-Project expiration domain
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 21 * * *'
+
+jobs:
+  build:
+    name: check travellings-cn-project expiration domain
+    runs-on: ubuntu-latest
+    steps:
+      - name: Make Target Directory
+        run: |
+          pwd
+          mkdir -p ~/builds/target ~/builds/temp
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Donwload required lib
+        run: |
+          pip install -r requirements.txt
+      - name: Run Script To Donload travellings-cn-api/all.json And Output Domain List
+        run: |
+          python extra-scripts/travellings-cn-api/main.py
+      - name: Run Script To Check Domain Expiration
+        run: |
+          python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt -id sync_query
+      - name: Check and Retry Error Status Domain
+        run: |
+          max_retries=2
+          retries=0
+          while [ -s ~/builds/target/error.txt ] && [ $retries -lt $max_retries ]; do
+            echo "Sleeping for 600 seconds before retrying"
+            sleep 600
+            echo "Retrying $retries+1 of $max_retries"
+            mv ~/builds/target/error.txt ~/builds/temp/error.txt
+            python src/main.py -i ~/builds/temp/error.txt -o ~/builds/target/output.txt -e ~/builds/target/error.txt -id sync_query
+            rm ~/builds/temp/error.txt
+            retries=$((retries + 1))
+          done
+          if [ $retries -ge $max_retries ]; then
+            echo "Reached maximum retry limit of $max_retries"
+          fi
+      - name: Upload Output Target
+        uses: actions/upload-artifact@v4
+        with:
+          name: output
+          path: ~/builds/target/*

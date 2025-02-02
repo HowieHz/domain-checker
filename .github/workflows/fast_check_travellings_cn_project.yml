@@ -1,8 +1,6 @@
-name: Check travellings-cn-Project expiration domain
+name: Fast Check travellings-cn-Project expiration domain
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 21 * * *'
 
 jobs:
   build:
