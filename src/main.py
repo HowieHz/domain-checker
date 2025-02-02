@@ -12,6 +12,7 @@ import tldextract
 from tqdm.asyncio import tqdm_asyncio
 
 from commands import args_parser
+from plugin_caller import call_async_plugin_by_id, call_sync_plugin_by_id
 from plugin_manager import PluginManager
 from utils.date_utils import is_datetime_expired
 from utils.defined_types import Err, Ok, ParsedWhoisData, Result, RunArgs
@@ -30,7 +31,6 @@ from utils.text import (
     INFO_NOT_REGISTER,
     INFO_REDEMPTION_PERIOD,
 )
-from plugin_caller import call_async_plugin_by_id, call_sync_plugin_by_id
 
 
 async def main_async(

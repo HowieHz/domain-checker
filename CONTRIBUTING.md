@@ -122,4 +122,77 @@ chmod +x ./build-scripts/build_with_nuitka.sh
 
 ## 软件架构
 
-`plugin_manager` 加载插件
+### src 文件夹
+
+`src` 文件夹包含项目的主要源代码。以下是 `src` 文件夹中各部分的作用：
+
+- `main.py`: 项目的入口点，负责初始化和启动整个应用程序。它包含以下功能：
+  - 解析命令行参数
+  - 加载插件
+  - 启动异步任务
+  - 处理任务结果
+- `commands/`: 指令模块，定义了指令参数解析器
+- `plugin_manager/`: 插件管理模块，定义了单例模式的插件管理器
+- `plugin_caller/`: 插件调用模块，包括调用同步型插件和异步型插件的方法
+- `utils/`: 实用工具模块，包含辅助函数和工具类。这些函数和模块在项目的多个部分中被重复使用。包括：
+  - 日期和时间处理函数 `date_utils`
+  - 自定义类型 `defined_types`
+  - 文件操作函数 `file_utils`
+  - 日志函数 `logger`
+  - WHOIS 解析函数 `whois_parser`
+  - 项目需显示的固定文字 `text.py`
+
+### plugins 文件夹
+
+`plugins/`: 包含项目的插件模块。插件模块可以扩展项目的功能，通常在运行时动态加载。例如：
+  - 不同的类型的查询插件
+
+### tests 文件夹
+
+此处包括了项目的测试文件
+
+## 插件规范
+
+### 单文件型插件
+
+`.py` 结尾的单文件
+
+需在此文件中定义常量 `METADATA` 类型为自定义类型 `PluginMetadataDict`
+- "id" 不可重复
+- "mode" 为 "async" 为异步型插件，"sync" 为同步型插件
+
+需在此文件中定义主函数：
+
+异步型插件的主函数签名为：
+`async def main(domain: str) -> PluginReturnDict:`
+
+同步型插件的主函数签名为：
+`def main(domain: str) -> PluginReturnDict:`
+
+主函数返回值说明：
+- "code" 为 200 且 "raw" 非空，就会进入 WhOIS 解析检查
+- "code" 为 200 但 "raw" 为空，会解析为 ⚠ Empty query result
+- "code" 不为 200 时，不论 raw 怎样，均会解释为 ⚠ API Error
+- 注意：如果 "raw" 不是正常的 WHOIS 内容，如 "Queried interval is too short."。请将 "code" 返回为一个非 200 的值，如 503。否则有误判为 Not Register 的可能性。
+
+### 文件夹型型插件
+
+文件夹下要放置 `__init__.py`
+
+需在 `__init__.py` 中定义常量 `METADATA` 类型为自定义类型 `PluginMetadataDict`
+- "id" 不可重复
+- "mode" 为 "async" 为异步型插件，"sync" 为同步型插件
+
+需 `__init__.py` 中定义主函数
+
+异步型插件的主函数签名为：
+`async def main(domain: str) -> PluginReturnDict:`
+
+同步型插件的主函数签名为：
+`def main(domain: str) -> PluginReturnDict:`
+
+主函数返回值说明：
+- "code" 为 200 且 "raw" 非空，就会进入 WhOIS 解析检查
+- "code" 为 200 但 "raw" 为空，会解析为 ⚠ Empty query result
+- "code" 不为 200 时，不论 raw 怎样，均会解释为 ⚠ API Error
+- 注意：如果 "raw" 不是正常的 WHOIS 内容，如 "Queried interval is too short."。请将 "code" 返回为一个非 200 的值，如 503。否则有误判为 Not Register 的可能性。

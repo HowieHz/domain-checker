@@ -13,10 +13,6 @@ METADATA: PluginMetadataDict = {
 
 
 def main(domain: str) -> PluginReturnDict:
-    # 返回值 200 还非空，就会进入检查
-    # 返回值 200 但是 raw 为空，会设置为 Empty query result
-    # 返回值非 200 不论 raw 是什么都会按照 API Error 输出
-    # 所以如果返回值为 200 且 raw 非空，但不是正常的 whois 内容，就随便填一个非 200 的 code，如下面的 503，避免误判为 Not Register
     try:
         root_server = whois_server_dict[get_domain_tld(domain)]
         raw_whois = whois_request(domain, root_server)
