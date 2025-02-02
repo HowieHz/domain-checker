@@ -28,6 +28,17 @@ def call_sync_plugin_by_id(
                 {"domain": domain, "msg": "Empty query result", "code": ret["code"]}
             )
 
+        # 预判常见的 API 错误返回，防止插件作者漏判，导致最终域名误判为未注册
+        if any(
+            msg in ret["raw"]
+            for msg in [
+                "Your access is too fast,please try again later.",
+                "Queried interval is too short.",
+            ]
+        ):
+            # MsgErrResult
+            return Err({"domain": domain, "msg": str(ret["raw"]), "code": 503})
+
         return Ok({**whois_parser(ret["raw"]), "domain": domain})
     except Exception as e:
         # ExceptionErrResult
