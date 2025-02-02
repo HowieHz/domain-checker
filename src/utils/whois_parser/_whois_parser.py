@@ -2,7 +2,7 @@ import datetime
 from typing import Literal
 
 from ..date_utils import datetime_string_parser
-from ..defined_types import ParsedWhoisData, Result
+from ..defined_types import Err, ParsedWhoisData, Result
 from ..defined_types.datetime_parser_result import DatetimeParserErrResult
 
 
@@ -37,7 +37,9 @@ def _check_domain_status(
     """
     if "Domain Status: redemptionPeriod" in raw_whois:
         return (True, "redemption")
-    elif "Domain Name:" in raw_whois:
+    elif any(
+        keyword in raw_whois for keyword in ["Domain Name:", "domain:", "Domain name:"]
+    ):
         return (True, "registered")
     else:
         return (False, "unregistered")
@@ -52,6 +54,9 @@ def _whois_registry_expiry_date_parser(
             "Registrar Registration Expiration Date:",
             "Expiration Time:",
             "Registry Expiry Date:",
+            "Expiry date:",
+            "Expiry Date:",
         ]:
             if prefix in line:
                 return datetime_string_parser(line.strip().removeprefix(prefix).strip())
+    return Err({"msg": "Date not found", "err": Exception, "raw": raw_whois})

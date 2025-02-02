@@ -19,7 +19,9 @@ def datetime_string_parser(
         Result[datetime.datetime, DatetimeParserErrResult]: 表示解析后的日期和时间的 datetime 对象，时区为 utc
     """
     try:
-        parsed_datatime: datetime.datetime = dateutil.parser.parse(original_datetime)
+        parsed_datatime: datetime.datetime = dateutil.parser.parse(
+            original_datetime.strip()
+        )
 
         # 没有时区信息默认 utc
         if parsed_datatime.tzinfo is None:

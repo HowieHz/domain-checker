@@ -5,21 +5,20 @@ from src.utils.defined_types import PluginMetadataDict, PluginReturnDict
 from .whois_server_list import whois_server_dict
 
 METADATA: PluginMetadataDict = {
-    "id": "socket_query",
+    "id": "sync_query",
     "mode": "sync",
     "author": "HowieHz",
     "help": "调用内置 socket 库拉取 whois 信息",
 }
 
 
-# 传入域名的根域名要求 xn--
 def main(domain: str) -> PluginReturnDict:
     # 返回值 200 还非空，就会进入检查
     # 返回值 200 但是 raw 为空，会设置为 Empty query result
     # 返回值非 200 不论 raw 是什么都会按照 API Error 输出
     # 所以如果返回值为 200 且 raw 非空，但不是正常的 whois 内容，就随便填一个非 200 的 code，如下面的 503，避免误判为 Not Register
     try:
-        root_server = whois_server_dict[get_root_domain(domain)]
+        root_server = whois_server_dict[get_domain_tld(domain)]
         raw_whois = whois_request(domain, root_server)
         if raw_whois[0] == "Socket error":
             return {"code": 503, "raw": raw_whois[1]}
@@ -31,15 +30,15 @@ def main(domain: str) -> PluginReturnDict:
         return {"code": 500, "raw": e}
 
 
-def get_root_domain(domain: str) -> str:
+def get_domain_tld(domain: str) -> str:
     """
-    解析出域名的根域名，并检查其是否在 whois_server_dict 的键中。
+    解析出域名的顶级域名，并检查其是否在 whois_server_dict 的键中。
 
     Args:
         domain (str): 完整域名
 
     Returns:
-        str: 根域名，如果不在字典中则返回空字符串
+        str: 顶级域名，如果不在字典中则返回空字符串
     """
     domain_parts = domain.lower().split(".")
     for i in range(len(domain_parts)):

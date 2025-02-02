@@ -10,6 +10,7 @@ CLI_HELP_NUM_THREADS = "指定每进程最大并发线程数。"
 CLI_HELP_QUIET = "使程序减少输出。--quiet 或 --quiet True 均可启用此选项"
 
 INFO_NOT_REGISTER = "❌ {domain}  ⚪ Not Register"
+INFO_DATE_NOT_FOUND = "⚠️ {domain}  💻 Date Not Found"
 INFO_ERROR_PARSING_DATE = "⚠️ {domain}  💻 Error Parsing Date"
 INFO_CHECKING_DATE_EXPIRED = "⚠️ {domain} 💻 Error While Checking Date is Expired"
 INFO_EXPIRED = "❌ {domain}  🕐 Expired"

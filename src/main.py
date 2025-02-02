@@ -15,6 +15,7 @@ from commands import args_parser
 from plugin_manager import PluginManager
 from utils.date_utils import is_datetime_expired
 from utils.defined_types import Err, Ok, ParsedWhoisData, Result, RunArgs
+from utils.defined_types._plugin_data_structure import PluginMetadataDict
 from utils.defined_types.datetime_parser_result import DatetimeParserErrResult
 from utils.defined_types.domain_query_result import ExceptionErrResult, MsgErrResult
 from utils.file_utils import split_file
@@ -22,13 +23,14 @@ from utils.logger import debug, info
 from utils.text import (
     INFO_API_ERROR,
     INFO_CHECKING_DATE_EXPIRED,
+    INFO_DATE_NOT_FOUND,
     INFO_ERROR_PARSING_DATE,
     INFO_EXPIRED,
     INFO_NOT_EXPIRED,
     INFO_NOT_REGISTER,
     INFO_REDEMPTION_PERIOD,
 )
-from whois_query_tool import call_plugin_by_id
+from whois_query_tool import call_async_plugin_by_id, call_sync_plugin_by_id
 
 
 async def main_async(
@@ -45,23 +47,36 @@ async def main_async(
         error_file (Optional[str]): 错误日志文件的路径
         thread_pool_executor (_type_, optional): 线程池实例
     """
-    tasks: list[concurrent.futures.Future] = []
+    tasks: list[asyncio.Task | concurrent.futures.Future] = []
 
-    id: str = "whois21"
+    plugin_id: str = "async_query"
 
     loop = asyncio.get_running_loop()
+
+    plugin_metadata_dict: PluginMetadataDict = (
+        PluginManager().get_plugin_instance_by_id(plugin_id).METADATA
+    )
 
     # 读取文件中的域名，一行一个域名。使用节约内存的读法
     async with aiofiles.open(file_part, "r", encoding="utf-8") as f:
         async for line in f:
-            # 提取出域名
-            extracted_domain = tldextract.extract(line.strip())
-            _domain = extracted_domain.domain + "." + extracted_domain.suffix
+            # 跳过空行
+            if not line.strip():
+                continue
 
-            # 创建 task
-            task: concurrent.futures.Future = loop.run_in_executor(
-                thread_pool_executor, call_plugin_by_id, id, _domain
-            )
+            # 提取出域名
+            extracted = tldextract.extract(line.strip())
+            target_domain = f"{extracted.domain}.{extracted.suffix}"
+
+            # 根据同步或异步创建 Task
+            if plugin_metadata_dict["mode"] == "async":
+                task: asyncio.Task = asyncio.create_task(
+                    call_async_plugin_by_id(plugin_id, target_domain)
+                )
+            else:
+                task: concurrent.futures.Future = loop.run_in_executor(
+                    thread_pool_executor, call_sync_plugin_by_id, plugin_id, target_domain
+                )
 
             # 加入 task 列表
             tasks.append(task)
@@ -131,14 +146,21 @@ async def main_async(
 
                 # 时间解析失败
 
-                if error["msg"] != "Error Parsing Date":
-                    raise ValueError
-
-                info(
-                    f"{INFO_ERROR_PARSING_DATE} err:{error['err']} raw:{error['raw']}".format(
-                        domain=result_domain
+                if error["msg"] == "Error Parsing Date":
+                    info(
+                        f"{INFO_ERROR_PARSING_DATE} err:{error['err']} raw:{error['raw']}".format(
+                            domain=result_domain
+                        )
                     )
-                )
+                elif error["msg"] == "Date not found":
+                    info(
+                        f"{INFO_DATE_NOT_FOUND} raw:{error['raw']}".format(
+                            domain=result_domain
+                        )
+                    )
+                else:
+                    raise ValueError("Invaid Data")  # 不可能的路径
+
                 # 解析失败的写入 error.txt 文件
                 if error_file is not None:
                     async with aiofiles.open(error_file, "a", encoding="utf-8") as f:

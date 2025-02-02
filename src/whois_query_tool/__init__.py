@@ -1,1 +1,1 @@
-from .__call_plugin_method import call_plugin_by_id
+from .__call_plugin_method import call_async_plugin_by_id, call_sync_plugin_by_id
