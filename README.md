@@ -1,5 +1,5 @@
 # domain-checker
- 
+
 > 通过查询 whois 批量检查域名是否过期的小工具
 
 ![GitHub](https://img.shields.io/github/license/HowieHz/domain-checker)
@@ -15,13 +15,13 @@
 - 在线工具：广告多，许多域名无法查询
 - 类似项目：不能满足需求，没法过滤诸如 `https://www.aaa.com.cn/index.html?id=1` 的域名是否过期
 
-类似项目：  
+类似项目：
 - [Matty9191/dns-domain-expiration-checker](https://github.com/Matty9191/dns-domain-expiration-checker) 年久失修，上一次更新在 4 年前
 - [click0/domain-check-2](https://github.com/click0/domain-check-2) 需要 Bash 才能使用，需要干净的 主域名.顶级域名 作为输入数据才能工作
 - [tdulcet/Remote-Servers-Status](https://github.com/tdulcet/Remote-Servers-Status)  至少需要 Bash 4.4 和 curl、netcat、ping、dig、delv、whois 和 openssl 命令
 - [ashworthconsulting/domain-check](https://github.com/ashworthconsulting/domain-check) 年久失修，上一次更新在 9 年前
 
---- 
+---
 
 ## 目录
 
@@ -40,7 +40,7 @@
   - [项目数据统计](#项目数据统计)
     - [Star History](#star-history)
 
---- 
+---
 
 ## 使用方法
 
@@ -57,11 +57,9 @@ options:
   -e ERROR, --error ERROR
                         指定保存未能成功查询的域名的文件
   -p NUM_PROCESSES, --num-processes NUM_PROCESSES
-                        指定并发进程数。默认为 1
+                        指定并发进程数。未指定则为 1
   -t MAX_NUM_THREADS_PER_PROCESS, --max-num-threads-per-process MAX_NUM_THREADS_PER_PROCESS
-                        指定每进程最大并发线程数。默认为 80
-  -utl [True], --unlock-threads-limit [True]
-                        解除线程最大值限制。--unlock-threads-limit 或 --unlock-threads-limit True 均可启用此选项
+                        指定每进程最大并发线程数。
   -q [True], --quiet [True]
                         使程序减少输出。--quiet 或 --quiet True 均可启用此选项
 ```
