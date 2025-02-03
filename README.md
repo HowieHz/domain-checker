@@ -34,7 +34,6 @@
     - [提高使用的进程数](#提高使用的进程数)
     - [提高单个进程可使用使用的线程数](#提高单个进程可使用使用的线程数)
     - [安静模式](#安静模式)
-  - [项目鸣谢](#项目鸣谢)
   - [开发指南](#开发指南)
   - [更新日志](#更新日志)
   - [项目数据统计](#项目数据统计)
@@ -138,10 +137,6 @@ domain-checker.exe -t 9999
 ```bash
 domain-checker.exe -q -o output.txt -e error.txt
 ```
-
-## 项目鸣谢
-
-- [WuSuoV/SkyQianWhois](https://github.com/WuSuoV/SkyQianWhois) 参考此项目的代码完成此项目 whois 查询部分，赞美作者。
 
 ## 开发指南
 

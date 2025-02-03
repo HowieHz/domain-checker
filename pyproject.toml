@@ -1,6 +1,6 @@
 [project]
 name = "domain-checker"
-version = "v2.0.0"
+version = "v2.0.0.alpha"
 requires-python = ">= 3.12"
 description = "Domain Expiration Checker"
 readme = "README.md"
@@ -21,14 +21,12 @@ line_length = 90
 python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
-files = ["src/main.py"]
+packages = ["src"]
 check_untyped_defs = true
+# ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = [
-    "aiofiles",
-    "whois21",
-]
+module = []
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

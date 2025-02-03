@@ -11,15 +11,22 @@ import aiofiles
 import tldextract
 from tqdm.asyncio import tqdm_asyncio
 
-from commands import args_parser
-from defined_types import Err, Ok, ParsedWhoisData, PluginMetadataDict, Result, RunArgs
-from defined_types.domain_query_result import ExceptionErrResult, MsgErrResult
-from plugin_caller import call_async_plugin_by_id, call_sync_plugin_by_id
-from plugin_manager import PluginManager
-from utils.date_utils import is_datetime_expired
-from utils.file_utils import split_file
-from utils.logger import debug, info
-from utils.text import (
+from src.commands import args_parser
+from src.defined_types import (
+    Err,
+    Ok,
+    ParsedWhoisData,
+    PluginMetadataDict,
+    Result,
+    RunArgs,
+)
+from src.defined_types.domain_query_result import ExceptionErrResult, MsgErrResult
+from src.plugin_caller import call_async_plugin_by_id, call_sync_plugin_by_id
+from src.plugin_manager import PluginManager
+from src.utils.date_utils import is_datetime_expired
+from src.utils.file_utils import split_file
+from src.utils.logger import debug, info
+from src.utils.text import (
     CLI_ERROR_INPUT_FILE_NOT_EXIST,
     CLI_ERROR_INVAID_PLUGIN_ID,
     CLI_ERROR_NO_AVAILABLE_PLUGIN,
@@ -260,6 +267,8 @@ def main(
         # 如果 async_query 不可用，就选第一个加载的插件
         if plugin_id not in PluginManager().get_all_plugin_ids():
             plugin_id = PluginManager().get_all_plugin_ids()[0]
+
+    plugin_id = cast(str, plugin_id)
 
     # 检查参数是否合法
     if num_processes < 1:

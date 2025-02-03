@@ -8,6 +8,7 @@ pyinstaller
 nuitka
 
 types-tqdm
+types-aiofiles
 types-python-dateutil
 
 whois21

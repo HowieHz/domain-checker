@@ -1,8 +1,8 @@
 import datetime
 from typing import Literal
 
-from defined_types import Err, ParsedWhoisData, Result
-from defined_types.datetime_parser_result import DatetimeParserErrResult
+from src.defined_types import Err, ParsedWhoisData, Result
+from src.defined_types.datetime_parser_result import DatetimeParserErrResult
 
 from ..date_utils import datetime_string_parser
 

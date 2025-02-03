@@ -5,8 +5,8 @@ import traceback
 from types import ModuleType
 from typing import Any, Generator
 
-from defined_types import PluginMetadataDict
-from utils.text import PLUGIN_DIR_LOAD_ERROR, PLUGIN_FILE_LOAD_ERROR
+from src.defined_types import PluginMetadataDict
+from src.utils.text import PLUGIN_DIR_LOAD_ERROR, PLUGIN_FILE_LOAD_ERROR
 
 # 为了导入上层包
 sys.path.append(os.path.join(sys.path[0], ".."))

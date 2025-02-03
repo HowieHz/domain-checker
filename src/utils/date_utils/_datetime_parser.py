@@ -2,8 +2,8 @@ import datetime
 
 from dateutil import parser
 
-from defined_types import Err, Ok, Result
-from defined_types.datetime_parser_result import DatetimeParserErrResult
+from src.defined_types import Err, Ok, Result
+from src.defined_types.datetime_parser_result import DatetimeParserErrResult
 
 
 def datetime_string_parser(

@@ -1,6 +1,6 @@
 import datetime
 
-from defined_types import Err, Ok, Result
+from src.defined_types import Err, Ok, Result
 
 
 def is_datetime_expired(target_datetime: datetime.datetime) -> Result[bool, Exception]:
