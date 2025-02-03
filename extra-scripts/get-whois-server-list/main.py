@@ -22,6 +22,7 @@ async def main():
     connector = aiohttp.TCPConnector(limit_per_host=50)  # 限制主机的最大连接数为 50
 
     async with aiohttp.ClientSession(connector=connector) as session:
+        print("try to get all TLD...")
         res_text = await fetch(session, iana_url, semaphore)
         soup = BeautifulSoup(res_text, "html.parser")
 
@@ -44,7 +45,7 @@ async def main():
             )
 
         print("✅ Got all TLD")
-
+        print("try to get all WHOIS Server...")
         responses: list[str | BaseException] = await asyncio.gather(
             *tasks, return_exceptions=True
         )
@@ -64,6 +65,7 @@ async def main():
                     print(f"{tld} hasn't WHOIS Server")
             except Exception as e:
                 print(e)
+        print("✅ Got WHOIS Servers")
 
     with open("whois_server_list.py", "a", encoding="utf-8") as suffix_list:
         suffix_list.write("whois_server_dict: dict[str, str] = {\n")
