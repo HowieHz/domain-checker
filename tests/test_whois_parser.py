@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-from src.defined_types import Err, Ok, ParsedWhoisData
+from src.defined_types import ParsedWhoisData
 from src.utils.whois_parser import whois_parser
 
 raw_whois_a = (

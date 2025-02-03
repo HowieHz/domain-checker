@@ -35,17 +35,26 @@ jobs:
 
       - name: Test with pytest
         run: |
-            pip install pytest pytest-cov
-            pytest --doctest-modules --junitxml=junit/test-results.xml --cov=src --cov-report=xml --cov-report=html
+            pip install pytest pytest-cov pytest-html
+            pytest --doctest-modules --junitxml=junit/test-results.xml --cov=src --cov-report=xml --cov-report=html --self-contained-html --html=./report/report.html
 
-      - name: Upload test results
+      - name: Upload test junitxml results
         uses: actions/upload-artifact@v4
         with:
-          name: Test Results
+          name: Test Results (junitxml) on ${{ runner.os }} ${{ runner.arch }}
           path: junit/test-results.xml
+          compression-level: 9
+
+      - name: Upload test report results
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test Results (report) on ${{ runner.os }} ${{ runner.arch }}
+          path: report
+          compression-level: 9
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: Coverage Report
+          name: Coverage Report on ${{ runner.os }} ${{ runner.arch }}
           path: htmlcov
+          compression-level: 9

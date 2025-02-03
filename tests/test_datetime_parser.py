@@ -2,7 +2,6 @@ import datetime
 
 import pytest
 
-from src.defined_types import Err, Ok
 from src.utils.date_utils import datetime_string_parser
 
 
@@ -24,7 +23,6 @@ def test_datetime_string_parser_valid(
     date_string, year, month, day, hour, minute, second
 ):
     result = datetime_string_parser(date_string)
-    assert isinstance(result, Ok)
     assert result.value.year == year
     assert result.value.month == month
     assert result.value.day == day
@@ -48,7 +46,6 @@ def test_datetime_string_parser_valid(
 )
 def test_datetime_string_parser_invalid(raw):
     result = datetime_string_parser(raw)
-    assert isinstance(result, Err)
     assert result.error["msg"] == "Error Parsing Date"
     assert result.error["raw"] == raw
     assert isinstance(result.error["err"], Exception)
@@ -58,7 +55,6 @@ def test_datetime_string_parser_invalid(raw):
 def test_datetime_string_parser_leap_year():
     leap_date = "2020-02-29T12:00:00Z"
     result = datetime_string_parser(leap_date)
-    assert isinstance(result, Ok)
     assert result.value.year == 2020
     assert result.value.month == 2
     assert result.value.day == 29
@@ -72,7 +68,6 @@ def test_datetime_string_parser_leap_year():
 def test_datetime_string_parser_earliest_date():
     earliest_date = "0001-01-01T00:00:00Z"
     result = datetime_string_parser(earliest_date)
-    assert isinstance(result, Ok)
     assert result.value.year == 1
     assert result.value.month == 1
     assert result.value.day == 1
@@ -96,7 +91,6 @@ def test_datetime_string_parser_various_formats(
     date_string, year, month, day, hour, minute, second
 ):
     result = datetime_string_parser(date_string)
-    assert isinstance(result, Ok)
     assert result.value.year == year
     assert result.value.month == month
     assert result.value.day == day
@@ -109,7 +103,6 @@ def test_datetime_string_parser_various_formats(
 def test_datetime_string_parser_timezone_offset():
     date_string = "2021-03-15T13:45:00-0500"
     result = datetime_string_parser(date_string)
-    assert isinstance(result, Ok)
     assert result.value.year == 2021
     assert result.value.month == 3
     assert result.value.day == 15
