@@ -77,7 +77,7 @@ class PluginManager(metaclass=SingletonMeta):
 
         Args:
             plugin_dir (str): 插件目录路径
-            plugin_file_suffix (str, optional): 插件后缀, 默认".py"
+            plugin_file_suffix (str, optional): 插件后缀，默认".py"
         """
         self._loaded_plugin.clear()
         loaded_plugin_list: list[ModuleType] = []

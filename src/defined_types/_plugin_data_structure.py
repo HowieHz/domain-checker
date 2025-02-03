@@ -5,7 +5,7 @@ class PluginMetadataDict(TypedDict, total=False):
     """插件元数据数据类型"""
 
     id: str
-    mode: Literal["sync", "async"]  # 标记是同步还是异步
+    mode: Literal["sync", "async"]  # 标记是同步型还是异步型
     author: tuple[str] | str
     help: str
     # option: str

@@ -39,7 +39,7 @@ jobs:
         with:
           nuitka-version: main
           script-name: src/main.py
-          mode: app
+          mode: onefile
 
       - name: Build Executable with Nuitka on macOS
         if: matrix.os == 'macos-latest'
@@ -47,7 +47,7 @@ jobs:
         with:
           nuitka-version: main
           script-name: src/main.py
-          mode: app
+          mode: onefile
 
       - name: Build Executable with Nuitka on Windows
         if: matrix.os == 'windows-latest'
@@ -55,7 +55,7 @@ jobs:
         with:
           nuitka-version: main
           script-name: src/main.py
-          mode: app
+          mode: onefile
 
       - name: Copy Plugins on Linux
         if: matrix.os == 'ubuntu-latest'

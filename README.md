@@ -17,7 +17,7 @@
 
 类似项目：
 - [Matty9191/dns-domain-expiration-checker](https://github.com/Matty9191/dns-domain-expiration-checker) 年久失修，上一次更新在 4 年前
-- [click0/domain-check-2](https://github.com/click0/domain-check-2) 需要 Bash 才能使用，需要干净的 主域名.顶级域名 作为输入数据才能工作
+- [click0/domain-check-2](https://github.com/click0/domain-check-2) 需要 Bash 才能使用，需要干净的 主域名。顶级域名 作为输入数据才能工作
 - [tdulcet/Remote-Servers-Status](https://github.com/tdulcet/Remote-Servers-Status)  至少需要 Bash 4.4 和 curl、netcat、ping、dig、delv、whois 和 openssl 命令
 - [ashworthconsulting/domain-check](https://github.com/ashworthconsulting/domain-check) 年久失修，上一次更新在 9 年前
 
@@ -61,12 +61,15 @@ options:
                         指定每进程最大并发线程数。
   -q [True], --quiet [True]
                         使程序减少输出。--quiet 或 --quiet True 均可启用此选项
-  -id ID                指定插件 ID 来进行查询，可用 ID 有（下列 ID 用逗号分隔）：whois21,async_query,sync_query
+  -id ID                指定插件 ID 来进行查询，可用 ID 有（下列 ID 用逗号分隔）：async_query,sync_query
 ```
 
 ## 使用示例
 
-- 要查询的域名放入 input.txt，一行一个，以下均为可接受形式
+> 如果`输入文件`未创建，将创建`输入文件`并退出程序
+
+- 要查询的域名放入 `input.txt`（此文件放放置于运行目录下）。
+- 一行一个需要查询的链接，以下均为可接受形式
 
 ```
 luogu.com.cn
@@ -93,10 +96,10 @@ domain-checker.exe
 
 ### 指定输出文件
 
-- 指定 error.txt 文件中将放置查询失败\解析失败的域名
-- 指定 output.txt 文件中将放置查询出已过期的域名
+- `-e ERROR, --error ERROR` 指定的文件中将放置查询失败\解析失败的域名
+- `-o OUTPUT, --output OUTPUT` 指定的文件中将放置查询出已过期的域名
 
-> 指令指定的 input.txt output.txt error.txt 无需提前创建
+> 指令指定的输出文件无需提前创建
 
 ```bash
 domain-checker.exe -i input.txt -o output.txt -e error.txt
@@ -120,11 +123,10 @@ domain-checker.exe -p 32
 
 ### 提高单个进程可使用使用的线程数
 
-如果不设限，一般来说一个进程会用到的最大线程为：此进程要处理的文件总行数。
+> 此项仅在使用 `同步型插件` 生效
+> `同步型插件` 是什么请看 [异步型插件/同步型插件解释](./CONTRIBUTING#异步型插件同步型插件)
 
-例子：input.txt 有 100 行，开启了 `-p 10` 分配给 10 个进程，每个进程分配到 10 个需要检查的地址（也就是需要处理行数为 10 的文件）。那么不设限的情况下，每个进程会用到的最大线程数一般为 10。
-
-以下指令会将最大进程数提升到 9999。
+以下指令会将最大线程数提升到 9999。
 
 ```bash
 domain-checker.exe -t 9999

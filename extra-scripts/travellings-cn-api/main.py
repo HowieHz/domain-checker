@@ -37,14 +37,14 @@ def main() -> None:
 if __name__ == "__main__":
     # 记录开始时间
     start_time = time.time()
-    print(f"travellings-cn-api script 开始时间: {datetime.now()}")
+    print(f"travellings-cn-api script 开始时间：{datetime.now()}")
 
     main()
 
     # 记录结束时间
     end_time = time.time()
-    print(f"travellings-cn-api script 结束时间: {datetime.now()}")
+    print(f"travellings-cn-api script 结束时间：{datetime.now()}")
 
     # 计算并输出时间差
     elapsed_time = end_time - start_time
-    print(f"travellings-cn-api script 运行时间: {elapsed_time:.2f} 秒")
+    print(f"travellings-cn-api script 运行时间：{elapsed_time:.2f} 秒")
