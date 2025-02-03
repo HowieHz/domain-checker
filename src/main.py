@@ -4,6 +4,7 @@ import multiprocessing
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import Literal, Optional, cast
 
 import aiofiles
@@ -19,6 +20,7 @@ from utils.date_utils import is_datetime_expired
 from utils.file_utils import split_file
 from utils.logger import debug, info
 from utils.text import (
+    CLI_ERROR_INPUT_FILE_NOT_EXIST,
     CLI_ERROR_INVAID_PLUGIN_ID,
     CLI_ERROR_NO_AVAILABLE_PLUGIN,
     INFO_API_ERROR,
@@ -321,6 +323,15 @@ if __name__ == "__main__":
         and run_args.plugin_id not in PluginManager().get_all_plugin_ids()
     ):
         raise ValueError(CLI_ERROR_INVAID_PLUGIN_ID)
+
+    # 确保输入文件是有效的
+    input_file_instance: Path = Path(run_args.input_file)
+    if not input_file_instance.exists():
+        # 已自动创建
+        input_file_instance.touch()
+        raise FileNotFoundError(
+            CLI_ERROR_INPUT_FILE_NOT_EXIST.format(input_file=run_args.input_file)
+        )
 
     start_time: float = time.time()
     main(

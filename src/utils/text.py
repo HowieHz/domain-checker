@@ -14,6 +14,7 @@ CLI_ERROR_INVAID_PLUGIN_ID = "指定的插件 ID 无效，请使用 --help 参�
 CLI_ERROR_NO_AVAILABLE_PLUGIN = (
     "无可用插件。请正确的在运行目录下放置 plugins 目录，并在其中放置插件文件"
 )
+CLI_ERROR_INPUT_FILE_NOT_EXIST = "输入文件 {input_file} 不存在，现已自动创建"
 
 INFO_NOT_REGISTER = "❌ {domain}  ⚪ Not Register"
 INFO_DATE_NOT_FOUND = "⚠️ {domain}  💻 Date Not Found"
