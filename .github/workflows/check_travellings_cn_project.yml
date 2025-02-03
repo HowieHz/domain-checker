@@ -1,4 +1,5 @@
-name: Check travellings-cn-Project expiration domain
+# This is an additional periodic task to check the expiration of the travellings-cn-Project domain.
+name: Periodic Check travellings-cn-Project expiration domain
 on:
   workflow_dispatch:
   schedule:
@@ -23,6 +24,9 @@ jobs:
       - name: Run Script To Donload travellings-cn-api/all.json And Output Domain List
         run: |
           python extra-scripts/travellings-cn-api/main.py
+      - name: Clean unused plugin
+        run: |
+          rm -rf plugins/whois21_query
       - name: Run Script To Check Domain Expiration
         run: |
           python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt -id sync_query
