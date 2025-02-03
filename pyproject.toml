@@ -1,6 +1,6 @@
 [project]
 name = "domain-checker"
-version = "v2.0.0.alpha"
+version = "v2.0.0"
 requires-python = ">= 3.12"
 description = "Domain Expiration Checker"
 readme = "README.md"
