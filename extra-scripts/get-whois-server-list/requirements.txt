@@ -1,3 +1,4 @@
 BeautifulSoup4
 aiohttp
 idna
+nuitka
