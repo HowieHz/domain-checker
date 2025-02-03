@@ -1,7 +1,7 @@
 import asyncio
-import datetime
 import multiprocessing
 import os
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -10,6 +10,9 @@ from typing import Literal, Optional, cast
 import aiofiles
 import tldextract
 from tqdm.asyncio import tqdm_asyncio
+
+# 用于解决运行出现 ModuleNotFoundError: No module named 'src' 问题
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/..")
 
 from src.commands import args_parser
 from src.defined_types import (
