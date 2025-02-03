@@ -7,8 +7,9 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/downloads/HowieHz/domain-checker/latest/total)
 ![GitHub repo size](https://img.shields.io/github/repo-size/HowieHz/domain-checker)
 
-- 异步查询
-- 多进程并发
+- 支持同步/异步查询
+- 支持多进程并发
+- 可通过插件支持任意 API
 
 ## 为什么写这个小工具
 
