@@ -36,6 +36,7 @@
     - [安静模式](#安静模式)
   - [开发指南](#开发指南)
   - [更新日志](#更新日志)
+  - [插件规范](#插件规范)
   - [项目数据统计](#项目数据统计)
     - [Star History](#star-history)
 
@@ -149,6 +150,10 @@ domain-checker.exe -q -o output.txt -e error.txt
 ## 更新日志
 
 见 [Releases](https://github.com/HowieHz/domain-checker/releases)
+
+## 插件规范
+
+见 [插件规范](./CONTRIBUTING.md#插件规范)
 
 ## 项目数据统计
 
