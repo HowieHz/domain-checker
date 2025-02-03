@@ -68,7 +68,7 @@ options:
 
 > 如果`输入文件`未创建，将创建`输入文件`并退出程序
 
-- 要查询的域名放入 `input.txt`（此文件放放置于运行目录下）。
+- 要查询的域名放入 `input.txt`（此文件放放置于运行目录下）
 - 一行一个需要查询的链接，以下均为可接受形式
 
 ```
@@ -113,9 +113,11 @@ domain-checker.exe -o output.txt -e error.txt
 
 ### 提高使用的进程数
 
-该指令会使用 32 进程查询。首先会把 input.txt 分成 32 份，放入 `./temp/temp_part_0.txt`、`./temp/temp_part_1.txt` …… `./temp/temp_part_31.txt`，后用 32 个进程分别查询。
+该指令会使用 32 进程查询。首先会把 input.txt 分成 32 份。
+分别放入 `./temp/temp_part_0.txt`、`./temp/temp_part_1.txt` ... `./temp/temp_part_31.txt`。
+之后后使用 32 个进程分别查询。
 
-> 注：程序正常运行结束会清除 `./temp` 中产生的临时文件 `./temp/temp_part_0.txt`、`./temp/temp_part_1.txt` …… `./temp/temp_part_31.txt`
+> 注：程序正常运行结束会清除 `./temp` 中产生的临时文件 `./temp/temp_part_0.txt`、`./temp/temp_part_1.txt` ... `./temp/temp_part_31.txt`
 
 ```bash
 domain-checker.exe -p 32
@@ -124,7 +126,7 @@ domain-checker.exe -p 32
 ### 提高单个进程可使用使用的线程数
 
 > 此项仅在使用 `同步型插件` 生效
-> `同步型插件` 是什么请看 [异步型插件/同步型插件解释](./CONTRIBUTING#异步型插件同步型插件)
+> [异步型插件/同步型插件解释](./CONTRIBUTING.md#异步型插件同步型插件)
 
 以下指令会将最大线程数提升到 9999。
 
@@ -142,7 +144,7 @@ domain-checker.exe -q -o output.txt -e error.txt
 
 ## 开发指南
 
-见 [CONTRIBUTING](./CONTRIBUTING)
+见 [CONTRIBUTING](./CONTRIBUTING.md)
 
 ## 更新日志
 
