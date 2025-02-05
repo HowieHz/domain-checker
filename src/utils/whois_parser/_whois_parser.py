@@ -16,9 +16,41 @@ def whois_parser(raw_whois: str) -> ParsedWhoisData:
     Returns:
         ParsedWhoisData: 解析后的结构化 whois 数据
     """
+    domain_status = _check_domain_status(raw_whois)
+    if not domain_status[0]:
+        return {
+            "domain": "",
+            "status": domain_status,
+            "raw": raw_whois,
+            "registry_expiry_date": Err(
+                {
+                    "msg": "Date not found",
+                    "err": ValueError("Date not found"),
+                    "raw": raw_whois,
+                }
+            ),
+        }
+
+    if raw_whois.startswith("1") or raw_whois.startswith("0"):
+        # .ch .li 特殊规定 不提供可用的域数据
+        # https://www.nic.li/whois/domaincheck/#collapse-c25cbf2f-a663-11e6-89db-525400a7a801-2
+        return {
+            "domain": "",
+            "status": domain_status,
+            "raw": raw_whois,
+            "registry_expiry_date": Err(
+                {
+                    "msg": "Date not found",
+                    "err": ValueError("Date not found"),
+                    "raw": raw_whois,
+                }
+            ),
+        }
+
+    # 已注册 or 赎回期
     return {
         "domain": "",
-        "status": _check_domain_status(raw_whois),
+        "status": domain_status,
         "raw": raw_whois,
         "registry_expiry_date": _whois_registry_expiry_date_parser(raw_whois),
     }
@@ -36,6 +68,12 @@ def _check_domain_status(
     Returns:
         Tuple[bool, str]: 返回一个元组，第一个元素表示是否为未注册状态，未注册则为 False。第二个元素表示状态（"registered", "redemption", "unregistered"）。
     """
+    # .ch .li 特殊规定
+    if raw_whois.startswith("1"):
+        return (False, "unregistered")
+    elif raw_whois.startswith("0"):
+        return (True, "registered")
+
     if "Domain Status: redemptionPeriod" in raw_whois:
         return (True, "redemption")
     elif any(

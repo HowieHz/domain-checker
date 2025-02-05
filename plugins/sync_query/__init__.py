@@ -12,6 +12,27 @@ METADATA = {
 
 def main(domain: str):
     try:
+        if domain.endswith("li") or domain.endswith("ch"):
+            # https://www.nic.li/whois/domaincheck/#collapse-c25cbf2f-a663-11e6-89db-525400a7a801-2
+            raw_whois = whois_request(domain, "whois.nic.ch", port=4343)
+            if raw_whois[1].startswith("1"):
+                # Domain name can be registered
+                return {"code": 200, "raw": raw_whois[1]}
+            elif raw_whois[1].startswith("0"):
+                # Domain name cannot be registered
+                return {"code": 200, "raw": raw_whois[1]}
+            elif raw_whois[1].startswith("-1"):
+                # Invalid enquiry (i.e. modify enquiry prior to next attempt)
+                return {"code": 503, "raw": raw_whois[1]}
+            elif raw_whois[1].startswith("-95"):
+                # Access restricted (i.e. wait a while and then try again)
+                return {"code": 503, "raw": raw_whois[1]}
+            elif raw_whois[1].startswith("-99"):
+                # Temporary server error (i.e. wait a while and then try again)
+                return {"code": 503, "raw": raw_whois[1]}
+
+            return {"code": 503, "raw": raw_whois[1]}
+
         root_server = whois_server_dict[get_domain_tld(domain)]
         raw_whois = whois_request(domain, root_server)
         if raw_whois[0] == "Socket error":

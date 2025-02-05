@@ -153,60 +153,77 @@ async def main_async(
                     await f.write(result_domain + "\n")
             continue
 
-        # 为了保险，再检查下时间是否是过期的。
-        # 检查“是否为赎回期”可能有缺漏，但是可以明确的是赎回期的特征：有域名过期时间但是时间过期了
+        STRICT_MODE: bool = True
 
-        # 查询时间
-        match parsed_whois_data["registry_expiry_date"]:
-            case Err(datetime_paser_error):
-                # 时间解析失败
-                if datetime_paser_error["msg"] == "Error Parsing Date":
-                    info(
-                        f"{INFO_ERROR_PARSING_DATE} err:{datetime_paser_error['err']} raw:{datetime_paser_error['raw']}".format(
-                            domain=result_domain
-                        )
-                    )
-                elif datetime_paser_error["msg"] == "Date not found":
-                    info(
-                        f"{INFO_DATE_NOT_FOUND} raw:{datetime_paser_error['raw']}".format(
-                            domain=result_domain
-                        )
-                    )
-                else:
-                    raise ValueError("Invaid Data")  # 不可能的路径
+        def is_pass_strict_mode(domain: str) -> bool:
+            """有些域名不提供域名信息，所以无法进行严格检查。检查这个域名是否允许跳过检查。
 
-                # 解析失败的写入 error.txt 文件
-                if error_file is not None:
-                    async with aiofiles.open(error_file, "a", encoding="utf-8") as f:
+            Args:
+                domain (str): 干净的域名如 a.li
+
+            Returns:
+                bool: 可跳过返回 True，不可跳过返回 False
+            """
+            # 有些域名不提供域名信息，所以无法进行严格检查
+            if domain.endswith(".li") or domain.endswith(".ch"):
+                return True
+            return False
+
+        if STRICT_MODE and not is_pass_strict_mode(domain=result_domain):
+            # 严格检查
+            # 为了保险，再检查下时间是否是过期的。
+            # 检查“是否为赎回期”可能有缺漏，但是可以明确的是赎回期的特征：有域名过期时间但是时间过期了
+            # 查询时间
+            match parsed_whois_data["registry_expiry_date"]:
+                case Err(datetime_paser_error):
+                    # 时间解析失败
+                    if datetime_paser_error["msg"] == "Error Parsing Date":
+                        info(
+                            f"{INFO_ERROR_PARSING_DATE} err:{datetime_paser_error['err']} raw:{datetime_paser_error['raw']}".format(
+                                domain=result_domain
+                            )
+                        )
+                    elif datetime_paser_error["msg"] == "Date not found":
+                        info(
+                            f"{INFO_DATE_NOT_FOUND} raw:{datetime_paser_error['raw']}".format(
+                                domain=result_domain
+                            )
+                        )
+                    else:
+                        raise ValueError("Invaid Data")  # 不可能的路径
+
+                    # 解析失败的写入 error.txt 文件
+                    if error_file is not None:
+                        async with aiofiles.open(error_file, "a", encoding="utf-8") as f:
+                            await f.write(result_domain + "\n")
+                    continue
+                case Ok(expired_date):
+                    pass
+                case _:
+                    exit(-1)
+
+            # 计算查到的时间是否过期
+            is_expired_result: Result[bool, Exception] = is_datetime_expired(expired_date)
+            match is_expired_result:
+                case Err(e):
+                    # 在检查时间是否过期的时候出现错误
+                    info(f"{INFO_CHECKING_DATE_EXPIRED} {e}".format(domain=result_domain))
+                    # 解析失败的写入 error.txt 文件
+                    if error_file is not None:
+                        async with aiofiles.open(error_file, "a", encoding="utf-8") as f:
+                            await f.write(result_domain + "\n")
+                    continue
+                case Ok(is_expired):
+                    pass
+
+            # 判断是否过期
+            if is_expired:
+                info(INFO_EXPIRED.format(domain=result_domain))
+                # 已过期的写入 output.txt 文件
+                if output_file is not None:
+                    async with aiofiles.open(output_file, "a", encoding="utf-8") as f:
                         await f.write(result_domain + "\n")
                 continue
-            case Ok(expired_date):
-                pass
-            case _:
-                exit(-1)
-
-        # 计算查到的时间是否过期
-        is_expired_result: Result[bool, Exception] = is_datetime_expired(expired_date)
-        match is_expired_result:
-            case Err(e):
-                # 在检查时间是否过期的时候出现错误
-                info(f"{INFO_CHECKING_DATE_EXPIRED} {e}".format(domain=result_domain))
-                # 解析失败的写入 error.txt 文件
-                if error_file is not None:
-                    async with aiofiles.open(error_file, "a", encoding="utf-8") as f:
-                        await f.write(result_domain + "\n")
-                continue
-            case Ok(is_expired):
-                pass
-
-        # 判断是否过期
-        if is_expired:
-            info(INFO_EXPIRED.format(domain=result_domain))
-            # 已过期的写入 output.txt 文件
-            if output_file is not None:
-                async with aiofiles.open(output_file, "a", encoding="utf-8") as f:
-                    await f.write(result_domain + "\n")
-            continue
 
         # 输出未过期的
         info(INFO_NOT_EXPIRED.format(domain=result_domain))
