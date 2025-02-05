@@ -3,7 +3,7 @@ name: Periodic Check travellings-cn-Project expiration domain
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 21 * * *'
+    - cron: '0 18 * * *'
 
 jobs:
   build:
@@ -32,11 +32,11 @@ jobs:
           python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt -id sync_query
       - name: Check and Retry Error Status Domain
         run: |
-          max_retries=15
+          max_retries=20
           retries=0
           while [ -s ~/builds/target/error.txt ] && [ $retries -lt $max_retries ]; do
-            echo "Sleeping for 600 seconds before retrying"
-            sleep 600
+            echo "Sleeping for 600*$retries seconds before retrying"
+            sleep $((600 * retries))
             echo "Retrying $retries+1 of $max_retries"
             mv ~/builds/target/error.txt ~/builds/temp/error.txt
             python src/main.py -i ~/builds/temp/error.txt -o ~/builds/target/output.txt -e ~/builds/target/error.txt -id sync_query
