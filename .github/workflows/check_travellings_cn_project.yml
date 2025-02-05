@@ -32,7 +32,7 @@ jobs:
           python src/main.py -o ~/builds/target/output.txt -e ~/builds/target/error.txt -id sync_query
       - name: Check and Retry Error Status Domain
         run: |
-          max_retries=2
+          max_retries=15
           retries=0
           while [ -s ~/builds/target/error.txt ] && [ $retries -lt $max_retries ]; do
             echo "Sleeping for 600 seconds before retrying"
