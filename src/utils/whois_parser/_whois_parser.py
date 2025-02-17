@@ -95,6 +95,7 @@ def _whois_registry_expiry_date_parser(
             "Registry Expiry Date:",
             "Expiry date:",
             "Expiry Date:",
+            "expire:",  # .mk
         ]:
             if prefix in line:
                 return datetime_string_parser(line.strip().removeprefix(prefix).strip())

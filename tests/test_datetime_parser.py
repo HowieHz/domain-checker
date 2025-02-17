@@ -18,6 +18,7 @@ from src.utils.date_utils import datetime_string_parser
         ("2025-01-01 00:00:00", 2025, 1, 1, 0, 0, 0),
         ("2025-11-09 22:31:20+00:00", 2025, 11, 9, 22, 31, 20),
         ("12-Feb-2026", 2026, 2, 12, 0, 0, 0),
+        ("24.11.2025", 2025, 11, 24, 0, 0, 0),
     ],
 )
 def test_datetime_string_parser_valid(
