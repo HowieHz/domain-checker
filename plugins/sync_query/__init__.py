@@ -12,7 +12,7 @@ METADATA = {
 
 def main(domain: str):
     try:
-        if domain.endswith("li") or domain.endswith("ch"):
+        if domain.endswith(".li") or domain.endswith(".ch"):
             # https://www.nic.li/whois/domaincheck/#collapse-c25cbf2f-a663-11e6-89db-525400a7a801-2
             raw_whois = whois_request(domain, "whois.nic.ch", port=4343)
             if raw_whois[1].startswith("1"):
