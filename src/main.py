@@ -67,6 +67,7 @@ async def main_async(
         PluginManager().get_plugin_instance_by_id(plugin_id).METADATA
     )
 
+    extract = tldextract.TLDExtract(include_psl_private_domains=True)
     # 读取文件中的域名，一行一个域名。使用节约内存的读法
     async with aiofiles.open(file_part, "r", encoding="utf-8") as f:
         async for line in f:
@@ -75,7 +76,7 @@ async def main_async(
                 continue
 
             # 提取出域名
-            extracted = tldextract.extract(line.strip())
+            extracted = extract(line.strip())
             target_domain = f"{extracted.domain}.{extracted.suffix}"
 
             task: asyncio.Task | asyncio.Future
