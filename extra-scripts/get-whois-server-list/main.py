@@ -74,6 +74,27 @@ async def main():
                 f'"{tld_and_whois_server[0]}":"{tld_and_whois_server[1]}",\n'
             )
         suffix_list.write("}")
+    print("✅ WHOIS Servers written to whois_server_list.py")
+
+    # get PSL
+    async with aiohttp.ClientSession(connector=connector) as session:
+        print("try to get PSL...")
+        public_suffix_list_dat: str = await fetch(
+            session, "https://publicsuffix.org/list/public_suffix_list.dat", semaphore
+        )
+    print("✅ Got PSL")
+
+    public_suffix_list = []
+    for line in public_suffix_list_dat.splitlines():
+        if line and not line.startswith("//"):
+            public_suffix_list.append(line.strip())
+
+    with open("public_suffix_list.py", "a", encoding="utf-8") as suffix_list:
+        suffix_list.write("public_suffix_list: list[str] = {\n")
+        for public_suffix in public_suffix_list:
+            suffix_list.write(f'"{public_suffix}",\n')
+        suffix_list.write("}")
+    print("✅ Public Suffix List written to public_suffix_list.py")
 
 
 if __name__ == "__main__":
