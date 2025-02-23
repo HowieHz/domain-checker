@@ -40,6 +40,7 @@ from src.utils.text import (
     INFO_EXPIRED,
     INFO_NOT_EXPIRED,
     INFO_NOT_REGISTER,
+    INFO_PUBLIC_SUFFIX_LIST,
     INFO_REDEMPTION_PERIOD,
 )
 
@@ -72,12 +73,16 @@ async def main_async(
     async with aiofiles.open(file_part, "r", encoding="utf-8") as f:
         async for line in f:
             # 跳过空行
-            if not line.strip():
+            line = line.strip()
+            if not line:
                 continue
 
             # 提取出域名
-            extracted = extract(line.strip())
+            extracted = extract(line)
             target_domain = f"{extracted.domain}.{extracted.suffix}"
+            if extracted.is_private:
+                info(f"{INFO_PUBLIC_SUFFIX_LIST}".format(domain=target_domain))
+                continue
 
             task: asyncio.Task | asyncio.Future
             # 根据同步或异步创建 Task
